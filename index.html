@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lake Cabin</title>
+    <title>Lake Cabins</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -24,7 +24,7 @@
         const CabinScorer = () => {
           const criteria = [
             "Distance from Home", "Lake", "Lake Depth", "Frontage", "Beach", "Lake Bottom",
-            "Swimming Depth", "Dock Condition", "Dock/Lift Included", "Backyard Slope",
+            "Swimming Depth", "Dock Condition", "Dock/Lift Included", "Backyard Grade",
             "Cabin Condition", "Bedrooms", "Bathrooms", "Kitchen", "Living Area", "Loft",
             "Fireplace", "Seasonal/Year Round", "Garage", "Outdoor Storage", "Backlot", "Lot size",
             "Lot side of Lake", "Included Furnishings/Toys"
@@ -42,17 +42,17 @@
 
           const guidelines = {
             "Distance from Home": "60 minutes",
-            "Lake": "desirability",
+            "Lake": "Desirability",
             "Lake Depth": "25 feet",
             "Frontage": "50 feet",
             "Beach": "Sand",
             "Lake Bottom": "Hard",
             "Swimming Depth": "Three feet at Dock",
             "Backyard Slope": "Moderate",
-            "Cabin Condition": "needs almost nothing",
+            "Cabin Condition": "Needs Almost Nothing",
             "Bedrooms": "Two",
             "Bathrooms": "One",
-            "Lot side of Lake": "North, East"
+            "Lot side of Lake": "North, West"
           };
 
           const [cabins, setCabins] = useState([]);
@@ -149,7 +149,7 @@
             <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-8">
               <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-12">
-                  <h1 className="text-6xl font-black text-slate-800 mb-4">Lake Cabin</h1>
+                  <h1 className="text-6xl font-black text-slate-800 mb-4">Lake Cabins</h1>
                   <p className="text-xl text-slate-600 mb-6">Score and compare lake cabins</p>
                 </div>
 
