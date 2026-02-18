@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lake Cabins</title>
+    <title>Lake Cabin</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -20,16 +20,25 @@
     
     <script type="text/babel">
         const { useState, useEffect } = React;
-        const { createIcons, Plus, X, Edit2, Check, Trash2, ChevronDown } = lucide;
 
         const CabinScorer = () => {
-          const startCriteria = [
+          const criteria = [
             "Distance from Home", "Lake", "Lake Depth", "Frontage", "Beach", "Lake Bottom",
             "Swimming Depth", "Dock Condition", "Dock/Lift Included", "Backyard Slope",
             "Cabin Condition", "Bedrooms", "Bathrooms", "Kitchen", "Living Area", "Loft",
-            "Fireplace", "Seasonal/Year Round", "Garage / Outdoor Storage", "Backlot", "Lot size",
+            "Fireplace", "Seasonal/Year Round", "Garage", "Outdoor Storage", "Backlot", "Lot size",
             "Lot side of Lake", "Included Furnishings/Toys"
           ];
+
+          const weights = {
+            "Distance from Home": 2,
+            "Lake": 2,
+            "Beach": 2,
+            "Swimming Depth": 2,
+            "Cabin Condition": 2,
+            "Garage": 2,
+            "Backlot": 2
+          };
 
           const guidelines = {
             "Distance from Home": "60 minutes",
@@ -40,18 +49,13 @@
             "Lake Bottom": "Hard",
             "Swimming Depth": "Three feet at Dock",
             "Backyard Slope": "Moderate",
-            "Cabin Condition": "Needs Almost Nothing",
+            "Cabin Condition": "needs almost nothing",
             "Bedrooms": "Two",
             "Bathrooms": "One",
             "Lot side of Lake": "North, East"
           };
 
           const [cabins, setCabins] = useState([]);
-          const [criteria, setCriteria] = useState(startCriteria);
-          const [editingCriteria, setEditingCriteria] = useState(false);
-          const [newCriterion, setNewCriterion] = useState("");
-          const [editingIndex, setEditingIndex] = useState(null);
-          const [editValue, setEditValue] = useState("");
           const [expanded, setExpanded] = useState(new Set());
           const [editingCabinName, setEditingCabinName] = useState(null);
 
@@ -60,34 +64,77 @@
             if (saved) {
               try {
                 const data = JSON.parse(saved);
-                if (data.cabins) setCabins(data.cabins);
-                if (data.criteria) setCriteria(data.criteria);
-              } catch (e) {}
+                if (data.cabins) {
+                  const updatedCabins = data.cabins.map(cabin => {
+                    const scores = {};
+                    criteria.forEach(c => {
+                      scores[c] = cabin.scores && cabin.scores[c] !== undefined ? cabin.scores[c] : 0;
+                    });
+                    return { ...cabin, scores };
+                  });
+                  setCabins(updatedCabins);
+                }
+              } catch (e) {
+                console.log('Load error:', e);
+              }
             }
           }, []);
 
           useEffect(() => {
-            if (cabins.length > 0 || criteria.length > 0) {
-              localStorage.setItem('cabinData', JSON.stringify({ cabins, criteria }));
+            if (cabins.length > 0) {
+              localStorage.setItem('cabinData', JSON.stringify({ cabins }));
             }
-          }, [cabins, criteria]);
+          }, [cabins]);
 
           const addCabin = () => {
-            const newCabin = { id: Date.now(), name: 'Cabin ' + (cabins.length + 1), scores: {} };
-            criteria.forEach(c => newCabin.scores[c] = 0);
+            const scores = {};
+            criteria.forEach(c => {
+              scores[c] = 0;
+            });
+            const newCabin = {
+              id: Date.now(),
+              name: 'Cabin ' + (cabins.length + 1),
+              scores: scores
+            };
             setCabins([...cabins, newCabin]);
           };
 
-          const removeCabin = (id) => setCabins(cabins.filter(c => c.id !== id));
-          const updateCabinName = (id, name) => setCabins(cabins.map(c => c.id === id ? { ...c, name } : c));
+          const removeCabin = (id) => {
+            setCabins(cabins.filter(c => c.id !== id));
+          };
+
+          const updateCabinName = (id, name) => {
+            setCabins(cabins.map(c => c.id === id ? { ...c, name } : c));
+          };
+
           const updateScore = (cabinId, criterion, score) => {
-            setCabins(cabins.map(c => c.id === cabinId ? { ...c, scores: { ...c.scores, [criterion]: score } } : c));
+            setCabins(cabins.map(c => {
+              if (c.id === cabinId) {
+                return { ...c, scores: { ...c.scores, [criterion]: score } };
+              }
+              return c;
+            }));
           };
-          const calculateTotal = (cabin) => Object.values(cabin.scores).reduce((sum, score) => sum + score, 0);
+
+          const calculateTotal = (cabin) => {
+            let total = 0;
+            for (const criterion in cabin.scores) {
+              const score = cabin.scores[criterion];
+              const weight = weights[criterion] || 1;
+              total += score * weight;
+            }
+            return total;
+          };
+
           const getScoreColor = (score) => {
-            const colors = { '-2': 'bg-red-500 hover:bg-red-600', '-1': 'bg-red-300 hover:bg-red-400', '0': 'bg-yellow-400 hover:bg-yellow-500', '1': 'bg-green-300 hover:bg-green-400', '2': 'bg-green-500 hover:bg-green-600' };
-            return colors[score];
+            if (score === -2) return 'bg-red-500 hover:bg-red-600';
+            if (score === -1) return 'bg-red-300 hover:bg-red-400';
+            if (score === 0) return 'bg-yellow-400 hover:bg-yellow-500';
+            if (score === 1) return 'bg-green-300 hover:bg-green-400';
+            if (score === 2) return 'bg-green-500 hover:bg-green-600';
+            return 'bg-yellow-400 hover:bg-yellow-500';
           };
+
           const toggleExpanded = (id) => {
             const newExpanded = new Set(expanded);
             if (newExpanded.has(id)) {
@@ -97,48 +144,12 @@
             }
             setExpanded(newExpanded);
           };
-          const addCriterion = () => {
-            if (newCriterion.trim()) {
-              setCriteria([...criteria, newCriterion.trim()]);
-              setCabins(cabins.map(c => ({ ...c, scores: { ...c.scores, [newCriterion.trim()]: 0 } })));
-              setNewCriterion("");
-            }
-          };
-          const startEditCriterion = (index) => {
-            setEditingIndex(index);
-            setEditValue(criteria[index]);
-          };
-          const saveEditCriterion = () => {
-            if (editValue.trim() && editingIndex !== null) {
-              const oldCrit = criteria[editingIndex];
-              const newCriteria = [...criteria];
-              newCriteria[editingIndex] = editValue.trim();
-              setCriteria(newCriteria);
-              setCabins(cabins.map(c => {
-                const newScores = { ...c.scores };
-                newScores[editValue.trim()] = newScores[oldCrit] || 0;
-                delete newScores[oldCrit];
-                return { ...c, scores: newScores };
-              }));
-              setEditingIndex(null);
-              setEditValue("");
-            }
-          };
-          const deleteCriterion = (index) => {
-            const critToDelete = criteria[index];
-            setCriteria(criteria.filter((_, i) => i !== index));
-            setCabins(cabins.map(c => {
-              const newScores = { ...c.scores };
-              delete newScores[critToDelete];
-              return { ...c, scores: newScores };
-            }));
-          };
 
           return (
             <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-8">
               <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-12">
-                  <h1 className="text-6xl font-black text-slate-800 mb-4">Lake Cabin Finder</h1>
+                  <h1 className="text-6xl font-black text-slate-800 mb-4">Lake Cabin</h1>
                   <p className="text-xl text-slate-600 mb-6">Score and compare lake cabins</p>
                 </div>
 
@@ -219,34 +230,44 @@
                             {isExpanded && (
                               <div className="px-6 pb-6 border-t border-white/20 pt-6">
                                 <div className="space-y-3">
-                                  {criteria.map((criterion, idx) => (
-                                    <div key={idx} className="bg-white/10 rounded-xl p-4">
-                                      <div className="flex items-center justify-between mb-2">
-                                        <div className="flex-1">
-                                          <span className="font-semibold text-white">{criterion}</span>
-                                          {guidelines[criterion] && (
-                                            <div className="text-xs italic text-white/60 mt-0.5">
-                                              {guidelines[criterion]}
-                                            </div>
-                                          )}
+                                  {criteria.map((criterion, idx) => {
+                                    const weight = weights[criterion] || 1;
+                                    const rawScore = cabin.scores[criterion] || 0;
+                                    const weightedScore = rawScore * weight;
+                                    return (
+                                      <div key={idx} className="bg-white/10 rounded-xl p-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <div className="flex-1">
+                                            <span className="font-semibold text-white">
+                                              {criterion}
+                                              {weight > 1 && (
+                                                <span className="ml-2 text-xs bg-yellow-400 text-slate-800 px-2 py-0.5 rounded font-bold">2×</span>
+                                              )}
+                                            </span>
+                                            {guidelines[criterion] && (
+                                              <div className="text-xs italic text-white/60 mt-0.5">
+                                                {guidelines[criterion]}
+                                              </div>
+                                            )}
+                                          </div>
+                                          <span className="text-sm font-bold text-white/80">
+                                            {weightedScore > 0 ? '+' : ''}{weightedScore}
+                                          </span>
                                         </div>
-                                        <span className="text-sm font-bold text-white/80">
-                                          {cabin.scores[criterion] > 0 ? '+' : ''}{cabin.scores[criterion]}
-                                        </span>
+                                        <div className="flex gap-2">
+                                          {[-2, -1, 0, 1, 2].map(score => (
+                                            <button
+                                              key={score}
+                                              onClick={() => updateScore(cabin.id, criterion, score)}
+                                              className={'flex-1 py-3 rounded-lg font-bold text-white shadow-md transition-all ' + getScoreColor(score) + ' ' + (rawScore === score ? 'ring-4 ring-white scale-105' : 'opacity-70 hover:opacity-100')}
+                                            >
+                                              {score > 0 ? '+' : ''}{score}
+                                            </button>
+                                          ))}
+                                        </div>
                                       </div>
-                                      <div className="flex gap-2">
-                                        {[-2, -1, 0, 1, 2].map(score => (
-                                          <button
-                                            key={score}
-                                            onClick={() => updateScore(cabin.id, criterion, score)}
-                                            className={'flex-1 py-3 rounded-lg font-bold text-white shadow-md transition-all ' + getScoreColor(score) + ' ' + (cabin.scores[criterion] === score ? 'ring-4 ring-white scale-105' : 'opacity-70 hover:opacity-100')}
-                                          >
-                                            {score > 0 ? '+' : ''}{score}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
@@ -277,76 +298,6 @@
                   </div>
                 </div>
 
-                <div className="mt-8 bg-white/80 rounded-2xl shadow-lg p-6 border border-teal-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-slate-800">Scoring Criteria</h2>
-                    <button
-                      onClick={() => setEditingCriteria(!editingCriteria)}
-                      className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
-                    >
-                      <i data-lucide="edit-2" className="w-4 h-4"></i>
-                      {editingCriteria ? 'Done' : 'Edit'}
-                    </button>
-                  </div>
-
-                  {editingCriteria && (
-                    <>
-                      <div className="mb-4 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p className="text-sm text-blue-800">
-                          <span className="font-semibold">Tip:</span> Edit, delete, or add criteria below.
-                        </p>
-                      </div>
-                      <div className="space-y-3">
-                        {criteria.map((criterion, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            {editingIndex === index ? (
-                              <>
-                                <input
-                                  type="text"
-                                  value={editValue}
-                                  onChange={(e) => setEditValue(e.target.value)}
-                                  className="flex-1 px-3 py-2 border border-teal-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                                  onKeyPress={(e) => e.key === 'Enter' && saveEditCriterion()}
-                                />
-                                <button onClick={saveEditCriterion} className="p-2 bg-green-500 text-white rounded-lg">
-                                  <i data-lucide="check" className="w-4 h-4"></i>
-                                </button>
-                                <button onClick={() => setEditingIndex(null)} className="p-2 bg-gray-400 text-white rounded-lg">
-                                  <i data-lucide="x" className="w-4 h-4"></i>
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <span className="flex-1 px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{criterion}</span>
-                                <button onClick={() => startEditCriterion(index)} className="p-2 bg-blue-500 text-white rounded-lg">
-                                  <i data-lucide="edit-2" className="w-4 h-4"></i>
-                                </button>
-                                <button onClick={() => deleteCriterion(index)} className="p-2 bg-red-500 text-white rounded-lg">
-                                  <i data-lucide="trash-2" className="w-4 h-4"></i>
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        ))}
-
-                        <div className="flex gap-2 pt-3 border-t border-teal-200">
-                          <input
-                            type="text"
-                            value={newCriterion}
-                            onChange={(e) => setNewCriterion(e.target.value)}
-                            placeholder="Add new criterion..."
-                            className="flex-1 px-3 py-2 border border-teal-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            onKeyPress={(e) => e.key === 'Enter' && addCriterion()}
-                          />
-                          <button onClick={addCriterion} className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2">
-                            <i data-lucide="plus" className="w-4 h-4"></i>
-                            Add
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
               </div>
             </div>
           );
