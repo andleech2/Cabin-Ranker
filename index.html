@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lake Cabin</title>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link
@@ -16,7 +16,7 @@
     * { font-family: 'Lato', sans-serif; }
     h1, h2, h3 { font-family: 'Merriweather', serif; }
   </style>
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <!-- Removed Lucide script to avoid white-screen issues -->
 </head>
 <body>
   <div id="root"></div>
@@ -74,7 +74,7 @@
               const u = d.cabins.map(c => {
                 const sc = {};
                 criteria.forEach(cr => {
-                  sc[cr] = c.scores && c.scores[cr] !== undefined ? c.scores[cr] : 0;
+                  sc[cr] = c.scores?.[cr] ?? 0;
                 });
                 return {
                   id: c.id,
@@ -86,7 +86,9 @@
               });
               setCabins(u);
             }
-          } catch (e) {}
+          } catch (e) {
+            console.error("LocalStorage parse error:", e);
+          }
         }
       }, []);
 
@@ -117,42 +119,4 @@
         }
       };
 
-      const updateName   = (id, name)   => setCabins(cabins.map(c => c.id === id ? { ...c, name }   : c));
-      const updateNumber = (id, number) => setCabins(cabins.map(c => c.id === id ? { ...c, number } : c));
-      const updatePrice  = (id, price)  => setCabins(cabins.map(c => c.id === id ? { ...c, price }  : c));
-
-      const updateScore = (cid, cr, sc) =>
-        setCabins(cabins.map(c =>
-          c.id === cid ? { ...c, scores: { ...c.scores, [cr]: sc } } : c
-        ));
-
-      const calculateTotal = (c) => {
-        let t = 0;
-        for (const cr in c.scores) {
-          t += (c.scores[cr] || 0) * (weights[cr] || 1);
-        }
-        return t;
-      };
-
-      const getScoreColor = (s) =>
-        ({
-          '-2': 'bg-red-500 hover:bg-red-600',
-          '-1': 'bg-red-300 hover:bg-red-400',
-          '0':  'bg-yellow-400 hover:bg-yellow-500',
-          '1':  'bg-green-300 hover:bg-green-400',
-          '2':  'bg-green-500 hover:bg-green-600',
-        }[String(s)] || 'bg-yellow-400 hover:bg-yellow-500');
-
-      const toggleExpanded = (id) => {
-        setExpanded(prev => {
-          const n = new Set(prev);
-          if (n.has(id)) n.delete(id);
-          else n.add(id);
-          return n;
-        });
-      };
-
-      const exportData = () => {
-        const blob = new Blob([JSON.stringify({ cabins }, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link =
+      const updateName   = (id, name)   => setCabins(cabins.map(c => c.id === id ? {
