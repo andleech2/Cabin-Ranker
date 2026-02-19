@@ -14,4 +14,178 @@
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest/dist/
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    * { font-family: 'Lato', sans-serif; }
+    h1, h2, h3 { font-family: 'Merriweather', serif; }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+
+    const { useState, useEffect } = React;
+
+    const CabinScorer = () => {
+
+      const criteria = [
+        "Distance from Home","Lake","Lake Depth","Frontage","Beach","Lake Bottom",
+        "Swimming Depth","Dock Condition","Dock/Lift Included","Backyard Slope",
+        "Cabin Condition","Bedrooms","Bathrooms","Kitchen","Living Area","Loft",
+        "Fireplace","Seasonal/Year Round","Garage","Outdoor Storage","Backlot","Lot Size",
+        "Lot Side of Lake","Included Furnishings/Toys"
+      ];
+
+      const weights = {
+        "Distance from Home": 2,
+        "Lake": 2,
+        "Beach": 2,
+        "Swimming Depth": 2,
+        "Cabin Condition": 2,
+        "Garage": 2,
+        "Backlot": 2
+      };
+
+      const [cabins, setCabins] = useState([]);
+      const [expanded, setExpanded] = useState(new Set());
+
+      useEffect(() => {
+        const saved = localStorage.getItem("cabinData");
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.cabins) setCabins(parsed.cabins);
+          } catch (err) {
+            console.error("Load error:", err);
+          }
+        }
+      }, []);
+
+      useEffect(() => {
+        localStorage.setItem("cabinData", JSON.stringify({ cabins }));
+        if (window.lucide) {
+          setTimeout(() => window.lucide.createIcons(), 50);
+        }
+      }, [cabins, expanded]);
+
+      const addCabin = () => {
+        const scores = {};
+        criteria.forEach(c => scores[c] = 0);
+
+        setCabins([
+          ...cabins,
+          {
+            id: Date.now(),
+            name: "Cabin " + (cabins.length + 1),
+            scores
+          }
+        ]);
+      };
+
+      const updateScore = (id, criterion, score) => {
+        setCabins(cabins.map(c =>
+          c.id === id
+            ? { ...c, scores: { ...c.scores, [criterion]: score } }
+            : c
+        ));
+      };
+
+      const calculateTotal = (cabin) => {
+        let total = 0;
+        for (let key in cabin.scores) {
+          total += (cabin.scores[key] || 0) * (weights[key] || 1);
+        }
+        return total;
+      };
+
+      const toggleExpanded = (id) => {
+        const copy = new Set(expanded);
+        copy.has(id) ? copy.delete(id) : copy.add(id);
+        setExpanded(copy);
+      };
+
+      const getColor = (score) => {
+        if (score === -2) return "bg-red-500";
+        if (score === -1) return "bg-red-300";
+        if (score === 0) return "bg-yellow-400";
+        if (score === 1) return "bg-green-300";
+        if (score === 2) return "bg-green-500";
+      };
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-8">
+          <div className="max-w-6xl mx-auto">
+
+            <h1 className="text-5xl font-black text-center mb-8 text-slate-800">
+              Lake Cabin Scorer
+            </h1>
+
+            <button
+              onClick={addCabin}
+              className="w-full mb-6 py-4 bg-gradient-to-r from-teal-600 to-blue-600 text-white rounded-xl font-bold"
+            >
+              Add New Cabin
+            </button>
+
+            {cabins.map(cabin => (
+              <div key={cabin.id} className="bg-white rounded-xl shadow mb-6 p-6">
+
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold">{cabin.name}</h2>
+                  <div className="font-bold text-lg">
+                    Score: {calculateTotal(cabin)}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => toggleExpanded(cabin.id)}
+                  className="mb-4 text-blue-600 font-bold"
+                >
+                  {expanded.has(cabin.id) ? "Hide Details" : "Show Details"}
+                </button>
+
+                {expanded.has(cabin.id) && (
+                  <div className="space-y-4">
+                    {criteria.map((criterion, i) => (
+                      <div key={i}>
+                        <div className="flex justify-between mb-2">
+                          <span>{criterion}</span>
+                        </div>
+
+                        <div className="flex gap-2">
+                          {[-2,-1,0,1,2].map(score => (
+                            <button
+                              key={score}
+                              onClick={() => updateScore(cabin.id, criterion, score)}
+                              className={
+                                "flex-1 py-2 text-white rounded " + getColor(score)
+                              }
+                            >
+                              {score}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+              </div>
+            ))}
+
+          </div>
+        </div>
+      );
+    };
+
+    // ✅ Safe mount for GitHub Pages
+    ReactDOM.render(<CabinScorer />, document.getElementById("root"));
+
+  </script>
+</body>
+</html>
