@@ -196,7 +196,7 @@
           <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="text-center mb-12">
-              <h1 className="text-6xl font-black text-slate-800 mb-4">Lake Cabin</h1>
+              <h1 className="text-4xl font-black text-slate-800 mb-4">Lake Cabins</h1>
               <p className="text-xl text-slate-600 mb-6">Score and compare lake cabins</p>
             </div>
 
@@ -217,7 +217,7 @@
             ) : (
               <div className="mb-8 bg-gradient-to-br from-teal-600 to-blue-600 rounded-2xl shadow-2xl p-8 text-white">
                 <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
-                  <span className="text-4xl">🏡</span> Your Cabins
+                  <span className="text-4xl">🏡</span> Cabins
                 </h2>
 
                 <div className="grid gap-4">
@@ -274,7 +274,7 @@
                                     className="text-xl font-semibold flex items-center gap-2 hover:text-teal-100 flex-1"
                                     onClick={(e) => { e.stopPropagation(); setEditingNumber(cabin.id); }}
                                   >
-                                    {cabin.number || 'Add number...'}
+                                    {cabin.number || 'Number...'}
                                     <i data-lucide="edit-2" className="w-4 h-4 opacity-60"></i>
                                   </div>
                                 )}
