@@ -70,13 +70,11 @@
                     criteria.forEach(c => {
                       scores[c] = cabin.scores && cabin.scores[c] !== undefined ? cabin.scores[c] : 0;
                     });
-                    return { ...cabin, scores };
+                    return { id: cabin.id, name: cabin.name, scores: scores };
                   });
                   setCabins(updatedCabins);
                 }
-              } catch (e) {
-                console.log('Load error:', e);
-              }
+              } catch (e) {}
             }
           }, []);
 
@@ -88,19 +86,15 @@
 
           const addCabin = () => {
             const scores = {};
-            criteria.forEach(c => {
-              scores[c] = 0;
-            });
-            const newCabin = {
-              id: Date.now(),
-              name: 'Cabin ' + (cabins.length + 1),
-              scores: scores
-            };
+            criteria.forEach(c => { scores[c] = 0; });
+            const newCabin = { id: Date.now(), name: 'Cabin ' + (cabins.length + 1), scores: scores };
             setCabins([...cabins, newCabin]);
           };
 
           const removeCabin = (id) => {
-            setCabins(cabins.filter(c => c.id !== id));
+            if (window.confirm('Delete this cabin?')) {
+              setCabins(cabins.filter(c => c.id !== id));
+            }
           };
 
           const updateCabinName = (id, name) => {
@@ -108,12 +102,7 @@
           };
 
           const updateScore = (cabinId, criterion, score) => {
-            setCabins(cabins.map(c => {
-              if (c.id === cabinId) {
-                return { ...c, scores: { ...c.scores, [criterion]: score } };
-              }
-              return c;
-            }));
+            setCabins(cabins.map(c => c.id === cabinId ? { ...c, scores: { ...c.scores, [criterion]: score } } : c));
           };
 
           const calculateTotal = (cabin) => {
@@ -137,12 +126,45 @@
 
           const toggleExpanded = (id) => {
             const newExpanded = new Set(expanded);
-            if (newExpanded.has(id)) {
-              newExpanded.delete(id);
-            } else {
-              newExpanded.add(id);
-            }
+            if (newExpanded.has(id)) { newExpanded.delete(id); } else { newExpanded.add(id); }
             setExpanded(newExpanded);
+          };
+
+          const exportData = () => {
+            const dataStr = JSON.stringify({ cabins }, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'lake-cabin-data.json';
+            link.click();
+            URL.revokeObjectURL(url);
+          };
+
+          const importData = (event) => {
+            const file = event.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                try {
+                  const data = JSON.parse(e.target.result);
+                  if (data.cabins) {
+                    const updatedCabins = data.cabins.map(cabin => {
+                      const scores = {};
+                      criteria.forEach(c => {
+                        scores[c] = cabin.scores && cabin.scores[c] !== undefined ? cabin.scores[c] : 0;
+                      });
+                      return { id: cabin.id, name: cabin.name, scores: scores };
+                    });
+                    setCabins(updatedCabins);
+                    alert('Data imported successfully!');
+                  }
+                } catch (error) {
+                  alert('Error importing data. Please check the file.');
+                }
+              };
+              reader.readAsText(file);
+            }
           };
 
           return (
@@ -180,24 +202,9 @@
                                 <div className="flex items-center justify-between">
                                   <div className="flex-1">
                                     {editingCabinName === cabin.id ? (
-                                      <input
-                                        type="text"
-                                        value={cabin.name}
-                                        onChange={(e) => updateCabinName(cabin.id, e.target.value)}
-                                        onBlur={() => setEditingCabinName(null)}
-                                        onKeyPress={(e) => e.key === 'Enter' && setEditingCabinName(null)}
-                                        autoFocus
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="text-2xl font-bold text-slate-800 bg-white rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                                      />
+                                      <input type="text" value={cabin.name} onChange={(e) => updateCabinName(cabin.id, e.target.value)} onBlur={() => setEditingCabinName(null)} onKeyPress={(e) => e.key === 'Enter' && setEditingCabinName(null)} autoFocus onClick={(e) => e.stopPropagation()} className="text-2xl font-bold text-slate-800 bg-white rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-teal-500" />
                                     ) : (
-                                      <div
-                                        className="text-2xl font-bold flex items-center gap-2 hover:text-teal-100"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setEditingCabinName(cabin.id);
-                                        }}
-                                      >
+                                      <div className="text-2xl font-bold flex items-center gap-2 hover:text-teal-100" onClick={(e) => { e.stopPropagation(); setEditingCabinName(cabin.id); }}>
                                         {cabin.name}
                                         <i data-lucide="edit-2" className="w-4 h-4 opacity-60"></i>
                                       </div>
@@ -218,10 +225,7 @@
                                 </div>
                               </div>
 
-                              <button
-                                onClick={() => removeCabin(cabin.id)}
-                                className="mt-4 px-3 py-1 bg-red-500/80 hover:bg-red-600 text-white rounded text-sm"
-                              >
+                              <button onClick={() => removeCabin(cabin.id)} className="mt-4 px-3 py-1 bg-red-500/80 hover:bg-red-600 text-white rounded text-sm">
                                 <i data-lucide="trash-2" className="w-3 h-3 inline mr-1"></i>
                                 Remove
                               </button>
@@ -240,27 +244,15 @@
                                           <div className="flex-1">
                                             <span className="font-semibold text-white">
                                               {criterion}
-                                              {weight > 1 && (
-                                                <span className="ml-2 text-xs bg-yellow-400 text-slate-800 px-2 py-0.5 rounded font-bold">2×</span>
-                                              )}
+                                              {weight > 1 && <span className="ml-2 text-xs bg-yellow-400 text-slate-800 px-2 py-0.5 rounded font-bold">2×</span>}
                                             </span>
-                                            {guidelines[criterion] && (
-                                              <div className="text-xs italic text-white/60 mt-0.5">
-                                                {guidelines[criterion]}
-                                              </div>
-                                            )}
+                                            {guidelines[criterion] && <div className="text-xs italic text-white/60 mt-0.5">{guidelines[criterion]}</div>}
                                           </div>
-                                          <span className="text-sm font-bold text-white/80">
-                                            {weightedScore > 0 ? '+' : ''}{weightedScore}
-                                          </span>
+                                          <span className="text-sm font-bold text-white/80">{weightedScore > 0 ? '+' : ''}{weightedScore}</span>
                                         </div>
                                         <div className="flex gap-2">
                                           {[-2, -1, 0, 1, 2].map(score => (
-                                            <button
-                                              key={score}
-                                              onClick={() => updateScore(cabin.id, criterion, score)}
-                                              className={'flex-1 py-3 rounded-lg font-bold text-white shadow-md transition-all ' + getScoreColor(score) + ' ' + (rawScore === score ? 'ring-4 ring-white scale-105' : 'opacity-70 hover:opacity-100')}
-                                            >
+                                            <button key={score} onClick={() => updateScore(cabin.id, criterion, score)} className={'flex-1 py-3 rounded-lg font-bold text-white shadow-md transition-all ' + getScoreColor(score) + ' ' + (rawScore === score ? 'ring-4 ring-white scale-105' : 'opacity-70 hover:opacity-100')}>
                                               {score > 0 ? '+' : ''}{score}
                                             </button>
                                           ))}
@@ -298,6 +290,22 @@
                   </div>
                 </div>
 
+                <div className="mt-8 bg-white/80 rounded-2xl shadow-lg p-6 border border-teal-100">
+                  <h3 className="text-xl font-bold text-slate-800 mb-4 text-center">Backup Your Data</h3>
+                  <div className="flex gap-4 max-w-md mx-auto">
+                    <button onClick={exportData} className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold flex items-center justify-center gap-2">
+                      <i data-lucide="download" className="w-5 h-5"></i>
+                      Export Data
+                    </button>
+                    <label className="flex-1 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold flex items-center justify-center gap-2 cursor-pointer">
+                      <i data-lucide="upload" className="w-5 h-5"></i>
+                      Import Data
+                      <input type="file" accept=".json" onChange={importData} className="hidden" />
+                    </label>
+                  </div>
+                  <p className="text-xs text-slate-600 text-center mt-3">Export to save a backup. Import to restore your cabins.</p>
+                </div>
+
               </div>
             </div>
           );
@@ -306,9 +314,7 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<CabinScorer />);
         
-        setTimeout(() => {
-          lucide.createIcons();
-        }, 100);
+        setTimeout(() => { lucide.createIcons(); }, 100);
     </script>
 </body>
 </html>
