@@ -1,123 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lake Cabin</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lake Cabin Scorer</title>
 
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&family=Lato:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <!-- React (DEV versions are more stable on GitHub Pages) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <style>
-        * { font-family: 'Lato', sans-serif; }
-        h1, h2, h3 { font-family: 'Merriweather', serif; }
-    </style>
-</head>
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-<body>
-    <div id="root"></div>
-
-<script type="text/babel">
-const { useState, useEffect } = React;
-
-const CabinScorer = () => {
-
-  const criteria = [
-    "Distance from Home","Lake","Lake Depth","Frontage","Beach","Lake Bottom",
-    "Swimming Depth","Dock Condition","Dock/Lift Included","Backyard Slope",
-    "Cabin Condition","Bedrooms","Bathrooms","Kitchen","Living Area","Loft",
-    "Fireplace","Seasonal/Year Round","Garage","Outdoor Storage","Backlot","Lot size",
-    "Lot side of Lake","Included Furnishings/Toys"
-  ];
-
-  const weights = {
-    "Distance from Home": 2,
-    "Lake": 2,
-    "Beach": 2,
-    "Swimming Depth": 2,
-    "Cabin Condition": 2,
-    "Garage": 2,
-    "Backlot": 2
-  };
-
-  const guidelines = {
-    "Distance from Home": "60 minutes",
-    "Lake": "desirability",
-    "Lake Depth": "25 feet",
-    "Frontage": "50 feet",
-    "Beach": "Sand",
-    "Lake Bottom": "Hard",
-    "Swimming Depth": "Three feet at Dock",
-    "Backyard Slope": "Moderate",
-    "Cabin Condition": "needs almost nothing",
-    "Bedrooms": "Two",
-    "Bathrooms": "One",
-    "Lot side of Lake": "North, East"
-  };
-
-  const [cabins, setCabins] = useState([]);
-  const [expanded, setExpanded] = useState(new Set());
-
-  useEffect(() => {
-    const saved = localStorage.getItem('cabinData');
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        if (data.cabins) setCabins(data.cabins);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('cabinData', JSON.stringify({ cabins }));
-    setTimeout(() => lucide.createIcons(), 50);
-  }, [cabins, expanded]);
-
-  const addCabin = () => {
-    const scores = {};
-    criteria.forEach(c => scores[c] = 0);
-    setCabins([...cabins, {
-      id: Date.now(),
-      name: "Cabin " + (cabins.length + 1),
-      scores
-    }]);
-  };
-
-  const updateScore = (id, criterion, score) => {
-    setCabins(cabins.map(c =>
-      c.id === id
-        ? { ...c, scores: { ...c.scores, [criterion]: score } }
-        : c
-    ));
-  };
-
-  const calculateTotal = (cabin) => {
-    let total = 0;
-    for (const key in cabin.scores) {
-      total += (cabin.scores[key] || 0) * (weights[key] || 1);
-    }
-    return total;
-  };
-
-  const toggleExpanded = (id) => {
-    const copy = new Set(expanded);
-    copy.has(id) ? copy.delete(id) : copy.add(id);
-    setExpanded(copy);
-  };
-
-  const getScoreColor = (score) => {
-    if (score === -2) return 'bg-red-500';
-    if (score === -1) return 'bg-red-300';
-    if (score === 0) return 'bg-yellow-400';
-    if (score === 1) return 'bg-green-300';
-    if (score === 2) return 'bg-green-500';
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/
