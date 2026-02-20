@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lake Cabin</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Lato', sans-serif; }
+        h1, h2, h3 { font-family: 'Merriweather', serif; }
+    </style>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function CabinScorer() {
+          const criteria = [
+            "Distance from Home", "Lake", "Lake Depth", "Frontage", "Beach", "Lake Bottom",
+            "Swimming Depth", "Dock Condition", "Dock/Lift Included", "Backyard Slope",
+            "Cabin Condition", "Bedrooms", "Bathrooms", "Kitchen", "Living Area", "Loft",
+            "Fireplace", "Seasonal/Year Round", "Garage", "Outdoor Storage", "Backlot", "Lot size",
+            "Lot side of Lake", "Included Furnishings/Toys"
+          ];
+
+          const weights = {
+            "Distance from Home": 2, "Lake": 2, "Beach": 2, "Swimming Depth": 2,
+            "Cabin Condition": 2, "Garage": 2, "Backlot": 2
+          };
+
+          const guidelines = {
+            "Distance from Home": "60 minutes", "Lake": "desirability", "Lake Depth": "25 feet",
+            "Frontage": "50 feet", "Beach": "Sand", "Lake Bottom": "Hard",
+            "Swimming Depth": "Three feet at Dock", "Backyard Slope": "Moderate",
+            "Cabin Condition": "needs almost nothing", "Bedrooms": "Two",
+            "Bathrooms": "One", "Lot side of Lake": "North, East"
+          };
+
+          const [cabins, setCabins] = useState([]);
+          const [expanded, setExpanded] = useState(new Set());
+          const [editingName, setEditingName] = useState(null);
+          const [editingNumber, setEditingNumber] = useState(null);
+          const [editingPrice, setEditingPrice] = useState(null);
+
+          useEffect(() => {
+            const saved = localStorage.getItem('cabinData');
+            if (saved) {
+              try {
+                const data = JSON.parse(saved);
+                if (data.cabins) {
+                  const updated = data.cabins.map(cabin => {
+                    const scores = {};
+                    criteria.forEach(c => { 
+                      scores[c] = cabin.scores && cabin.scores[c] !== undefined ? cabin.scores[c] : 0; 
+                    });
+                    return { 
+                      id: cabin.id, 
+                      name: cabin.name, 
+                      number: cabin.number || '', 
+                      price: cabin.price || '', 
+                      scores: scores 
+                    };
+                  });
+                  setCabins(updated);
+                }
+              } catch (e) {}
+            }
+          }, []);
+
+          useEffect(() => {
+            if (cabins.length > 0) localStorage.setItem('cabinData', JSON.stringify({ cabins }));
+          }, [cabins]);
+
+          const addCabin = () => {
+            const scores = {};
+            criteria.forEach(c => { scores[c] = 0; });
+            setCabins([{ 
+              id: Date.now(), 
+              name: 'Cabin ' + (cabins.length + 1), 
+              number: '', 
+              price: '', 
+              scores 
+            }, ...cabins]);
+          };
+
+          const removeCabin = (id) => {
+            if (window.confirm('Delete this cabin?')) setCabins(cabins.filter(c => c.id !== id));
+          };
+
+          const updateName = (id, name) => setCabins(cabins.map(c => c.id === id ? { ...c, name } : c));
+          const updateNumber = (id, number) => setCabins(cabins.map(c => c.id === id ? { ...c, number } : c));
+          const updatePrice = (id, price) => setCabins(cabins.map(c => c.id === id ? { ...c, price } : c));
+
+          const updateScore = (cabinId, criterion, score) => {
+            setCabins(cabins.map(c => c.id === cabinId ? { ...c, scores: { ...c.scores, [criterion]: score } } : c));
+          };
+
+          const calculateTotal = (cabin) => {
+            let total = 0;
+            for (const c in cabin.scores) {
+              total += cabin.scores[c] * (weights[c] || 1);
+            }
+            return total;
+          };
+
+          const getScoreColor = (score) => {
+            const map = { 
+              '-2': 'bg-red-500 hover:bg-red-600', 
+              '-1': 'bg-red-300 hover:bg-red-400', 
+              '0': 'bg-yellow-400 hover:bg-yellow-500', 
+              '1': 'bg-green-300 hover:bg-green-400', 
+              '2': 'bg-green-500 hover:bg-green-600' 
+            };
+            return map[score] || 'bg-yellow-400 hover:bg-yellow-500';
+          };
+
+          const toggleExpanded = (id) => {
+            const newExp = new Set(expanded);
+            if (newExp.has(id)) newExp.delete(id); 
+            else newExp.add(id);
+            setExpanded(newExp);
+          };
+
+          const exportData = () => {
+            const blob = new Blob([JSON.stringify({ cabins }, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'lake-cabin-data.json';
+            link.click();
+            URL.revokeObjectURL(url);
+          };
+
+          const importData = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (ev) => {
+                try {
+                  const data = JSON.parse(ev.target.result);
+                  if (data.cabins) {
+                    const updated = data.cabins.map(cabin => {
+                      const scores = {};
+                      criteria.forEach(c => { 
+                        scores[c] = cabin.scores && cabin.scores[c] !== undefined ? cabin.scores[c] : 0; 
+                      });
+                      return { 
+                        id: cabin.id, 
+                        name: cabin.name, 
+                        number: cabin.number || '', 
+                        price: cabin.price || '', 
+                        scores 
+                      };
+                    });
+                    setCabins(updated);
+                    alert('Imported ' + updated.length + ' cabins');
+                  }
+                } catch (err) { 
+                  alert('Error importing'); 
+                }
+              };
+              reader.readAsText(file);
+            }
+          };
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-8">
+              <div className="max-w-7xl mx-auto">
+                <div className="text-center mb-12">
+                  <h1 className="text-4xl font-black text-slate-800 mb-4">Lake Cabins</h1>
+                  <p className="text-xl text-slate-600 mb-6">Score and compare lake cabins</p>
+                </div>
+
+                <button onClick={addCabin} className="w-full mb-6 py-4 bg-gradient-to-r from-teal-600 to-blue-600 text-white rounded-xl hover:from-teal-700 hover:to-blue-700 shadow-lg flex items-center justify-center gap-3 text-lg font-bold">
+                  <i data-lucide="plus" className="w-6 h-6"></i>
+                  Add New Cabin
+                </button>
+
+                {cabins.length === 0 ? (
+                  <div className="text-center py-16 bg-white/60 rounded-2xl border-2 border-dashed border-teal-300">
+                    <div className="text-6xl mb-4">🏡</div>
+                    <p className="text-xl text-slate-600">No cabins yet. Add your first cabin!</p>
+                  </div>
+                ) : (
+                  <div className="mb-8 bg-gradient-to-br from-teal-600 to-blue-600 rounded-2xl shadow-2xl p-8 text-white">
+                    <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
+                      <span className="text-4xl">🏡</span>
+                      Your Cabins
+                    </h2>
+                    <div className="grid gap-4">
+                      {cabins.map((cabin) => {
+                        const total = calculateTotal(cabin);
+                        const isExpanded = expanded.has(cabin.id);
+                        return (
+                          <div key={cabin.id} className="bg-white/20 rounded-xl overflow-hidden">
+                            <div className="p-6">
+                              <div className="cursor-pointer" onClick={() => toggleExpanded(cabin.id)}>
+                                <div className="mb-4">
+                                  {editingName === cabin.id ? (
+                                    <input 
+                                      type="text" 
+                                      value={cabin.name} 
+                                      onChange={(e) => updateName(cabin.id, e.target.value)} 
+                                      onBlur={() => setEditingName(null)} 
+                                      onKeyDown={(e) => e.key === 'Enter' && setEditingName(null)} 
+                                      autoFocus 
+                                      onClick={(e) => e.stopPropagation()} 
+                                      className="text-2xl font-bold text-slate-800 bg-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 w-full mb-2" 
+                                    />
+                                  ) : (
+                                    <div 
+                                      className="text-2xl font-bold flex items-center gap-2 hover:text-teal-100 mb-2" 
+                                      onClick={(e) => { e.stopPropagation(); setEditingName(cabin.id); }}
+                                    >
+                                      {cabin.name}
+                                      <i data-lucide="edit-2" className="w-4 h-4 opacity-60"></i>
+                                    </div>
+                                  )}
+                                  <div className="flex items-center justify-between gap-4">
+                                    {editingNumber === cabin.id ? (
+                                      <input 
+                                        type="text" 
+                                        value={cabin.number} 
+                                        onChange={(e) => updateNumber(cabin.id, e.target.value)} 
+                                        onBlur={() => setEditingNumber(null)} 
+                                        onKeyDown={(e) => e.key === 'Enter' && setEditingNumber(null)} 
+                                        autoFocus 
+                                        onClick={(e) => e.stopPropagation()} 
+                                        className="text-xl font-semibold text-slate-800 bg-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 flex-1" 
+                                      />
+                                    ) : (
+                                      <div 
+                                        className="text-xl font-semibold flex items-center gap-2 hover:text-teal-100 flex-1" 
+                                        onClick={(e) => { e.stopPropagation(); setEditingNumber(cabin.id); }}
+                                      >
+                                        {cabin.number || 'Number'}
+                                        <i data-lucide="edit-2" className="w-4 h-4 opacity-60"></i>
+                                      </div>
+                                    )}
+                                    {editingPrice === cabin.id ? (
+                                      <input 
+                                        type="text" 
+                                        value={cabin.price} 
+                                        onChange={(e) => updatePrice(cabin.id, e.target.value)} 
+                                        onBlur={() => setEditingPrice(null)} 
+                                        onKeyDown={(e) => e.key === 'Enter' && setEditingPrice(null)} 
+                                        autoFocus 
+                                        onClick={(e) => e.stopPropagation()} 
+                                        className="text-xl font-semibold text-slate-800 bg-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500" 
+                                        style={{width: '120px'}}
+                                      />
+                                    ) : (
+                                      <div 
+                                        className="text-xl font-semibold flex items-center gap-2 hover:text-teal-100" 
+                                        onClick={(e) => { e.stopPropagation(); setEditingPrice(cabin.id); }}
+                                      >
+                                        {cabin.price ? '$' + cabin.price + 'K' : '$___K'}
+                                        <i data-lucide="edit-2" className="w-4 h-4 opacity-60"></i>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-center mb-6">
+                                  <div className="text-sm uppercase text-white/80 mb-2">Total</div>
+                                  <div className={'text-5xl font-black ' + (total > 0 ? 'text-green-300' : total < 0 ? 'text-red-300' : 'text-yellow-300')}>
+                                    {total > 0 ? '+' : ''}{total}
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); removeCabin(cabin.id); }} 
+                                    className="px-3 py-1 bg-red-500/80 hover:bg-red-600 text-white rounded text-sm"
+                                  >
+                                    <i data-lucide="trash-2" className="w-3 h-3 inline mr-1"></i>
+                                    Remove
+                                  </button>
+                                  <i data-lucide="chevron-down" className={'w-8 h-8 text-white transition-transform ' + (isExpanded ? 'rotate-180' : '')}></i>
+                                </div>
+                              </div>
+                            </div>
+
+                            {isExpanded && (
+                              <div className="px-6 pb-6 border-t border-white/20 pt-6">
+                                <div className="space-y-3">
+                                  {criteria.map((criterion, idx) => {
+                                    const weight = weights[criterion] || 1;
+                                    const rawScore = cabin.scores[criterion] || 0;
+                                    const weighted = rawScore * weight;
+                                    return (
+                                      <div key={idx} className="bg-white/10 rounded-xl p-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <div className="flex-1">
+                                            <span className="font-semibold text-white">
+                                              {criterion}
+                                              {weight > 1 && <span className="ml-2 text-xs bg-yellow-400 text-slate-800 px-2 py-0.5 rounded font-bold">2×</span>}
+                                            </span>
+                                            {guidelines[criterion] && <div className="text-xs italic text-white/60 mt-0.5">{guidelines[criterion]}</div>}
+                                          </div>
+                                          <span className="text-sm font-bold text-white/80">{weighted > 0 ? '+' : ''}{weighted}</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                          {[-2, -1, 0, 1, 2].map(score => (
+                                            <button 
+                                              key={score} 
+                                              onClick={() => updateScore(cabin.id, criterion, score)} 
+                                              className={'flex-1 py-3 rounded-lg font-bold text-white shadow-md transition-all ' + getScoreColor(score) + ' ' + (rawScore === score ? 'ring-4 ring-white scale-105' : 'opacity-70 hover:opacity-100')}
+                                            >
+                                              {score > 0 ? '+' : ''}{score}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-8 mb-8 bg-gradient-to-br from-white to-teal-50 rounded-xl shadow-lg p-4 border-2 border-teal-200">
+                  <h3 className="text-sm font-bold text-slate-800 mb-3 text-center">Scoring Guide</h3>
+                  <div className="flex flex-col gap-1.5 max-w-md mx-auto">
+                    {[
+                      { score: 2, label: 'Excellent', color: 'bg-green-500', textColor: 'text-green-700' },
+                      { score: 1, label: 'Good', color: 'bg-green-300', textColor: 'text-green-700' },
+                      { score: 0, label: 'OK', color: 'bg-yellow-400', textColor: 'text-yellow-700' },
+                      { score: -1, label: 'Not good', color: 'bg-red-300', textColor: 'text-red-600' },
+                      { score: -2, label: 'Terrible', color: 'bg-red-500', textColor: 'text-red-700' },
+                    ].map(({ score, label, color, textColor }) => (
+                      <div key={score} className="flex items-center gap-2 bg-white/50 rounded-lg p-1.5">
+                        <div className={'w-7 h-7 ' + color + ' rounded-md shadow flex items-center justify-center'}>
+                          <span className="text-sm font-black text-white">{score > 0 ? '+' : ''}{score}</span>
+                        </div>
+                        <span className={'text-xs font-bold ' + textColor}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-8 bg-white/80 rounded-2xl shadow-lg p-6 border border-teal-100">
+                  <h3 className="text-xl font-bold text-slate-800 mb-4 text-center">Backup Your Data</h3>
+                  <div className="flex gap-4 max-w-md mx-auto">
+                    <button onClick={exportData} className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold flex items-center justify-center gap-2">
+                      <i data-lucide="download" className="w-5 h-5"></i>
+                      Export Data
+                    </button>
+                    <label className="flex-1 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold flex items-center justify-center gap-2 cursor-pointer">
+                      <i data-lucide="upload" className="w-5 h-5"></i>
+                      Import Data
+                      <input type="file" accept=".json" onChange={importData} className="hidden" />
+                    </label>
+                  </div>
+                  <p className="text-xs text-slate-600 text-center mt-3">Export to save a backup. Import to restore your cabins.</p>
+                </div>
+
+              </div>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<CabinScorer />);
+        
+        setTimeout(() => { lucide.createIcons(); }, 100);
+    </script>
+</body>
+</html>
