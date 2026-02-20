@@ -81,13 +81,13 @@
           const addCabin = () => {
             const scores = {};
             criteria.forEach(c => { scores[c] = 0; });
-            setCabins([...cabins, { 
+            setCabins([{ 
               id: Date.now(), 
               name: 'Cabin ' + (cabins.length + 1), 
               number: '', 
               price: '', 
               scores 
-            }]);
+            }, ...cabins]);
           };
 
           const removeCabin = (id) => {
@@ -195,7 +195,7 @@
                       Your Cabins
                     </h2>
                     <div className="grid gap-4">
-                      {[...cabins].sort((a, b) => calculateTotal(b) - calculateTotal(a)).map((cabin) => {
+                      {cabins.map((cabin) => {
                         const total = calculateTotal(cabin);
                         const isExpanded = expanded.has(cabin.id);
                         return (
