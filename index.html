@@ -356,4 +356,71 @@
                                           {[-2, -1, 0, 1, 2].map(score => (
                                             <button 
                                               key={score} 
-                       
+                                              onClick={() => updateScore(cabin.id, criterion, score)} 
+                                              className={'flex-1 py-3 rounded-lg font-bold text-white shadow-md transition-all ' + getScoreColor(score) + ' ' + (rawScore === score ? 'ring-4 ring-white scale-105' : 'opacity-70 hover:opacity-100')}
+                                            >
+                                              {score > 0 ? '+' : ''}{score}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-8 mb-8 bg-gradient-to-br from-white to-teal-50 rounded-xl shadow-lg p-4 border-2 border-teal-200">
+                  <h3 className="text-sm font-bold text-slate-800 mb-3 text-center">Scoring Guide</h3>
+                  <div className="flex flex-col gap-1.5 max-w-md mx-auto">
+                    {[
+                      { score: 2, label: 'Excellent', color: 'bg-green-500', textColor: 'text-green-700' },
+                      { score: 1, label: 'Good', color: 'bg-green-300', textColor: 'text-green-700' },
+                      { score: 0, label: 'OK, Zero, Default', color: 'bg-yellow-400', textColor: 'text-yellow-700' },
+                      { score: -1, label: 'Not good', color: 'bg-red-300', textColor: 'text-red-600' },
+                      { score: -2, label: 'Terrible', color: 'bg-red-500', textColor: 'text-red-700' },
+                    ].map(({ score, label, color, textColor }) => (
+                      <div key={score} className="flex items-center gap-2 bg-white/50 rounded-lg p-1.5">
+                        <div className={'w-7 h-7 ' + color + ' rounded-md shadow flex items-center justify-center'}>
+                          <span className="text-sm font-black text-white">{score > 0 ? '+' : ''}{score}</span>
+                        </div>
+                        <span className={'text-xs font-bold ' + textColor}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-8 bg-white/80 rounded-2xl shadow-lg p-6 border border-teal-100">
+                  <h3 className="text-xl font-bold text-slate-800 mb-4 text-center">Backup Your Data</h3>
+                  <div className="flex gap-4 max-w-md mx-auto">
+                    <button onClick={exportData} className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold flex items-center justify-center gap-2">
+                      <i data-lucide="download" className="w-5 h-5"></i>
+                      Export Data
+                    </button>
+                    <label className="flex-1 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold flex items-center justify-center gap-2 cursor-pointer">
+                      <i data-lucide="upload" className="w-5 h-5"></i>
+                      Import Data
+                      <input type="file" accept=".json" onChange={importData} className="hidden" />
+                    </label>
+                  </div>
+                  <p className="text-xs text-slate-600 text-center mt-3">Export to save a backup. Import to restore your cabins.</p>
+                </div>
+
+              </div>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<CabinScorer />);
+        
+        setTimeout(() => { lucide.createIcons(); }, 100);
+    </script>
+</body>
+</html>
