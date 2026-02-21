@@ -41,7 +41,7 @@
             "Swimming Depth": "3' at Dock +1, Deeper +2", "Dock/Lift Included": " Dock +1, Lift +2", 
             "Backyard Slope": "Moderate +1, Gentle +2",
             "Cabin Condition": "Needs Little, +1, Needs Nothing +2", "Bedrooms": "Two +1",
-            "Bathrooms": "One +1", "Loft": "+2 if Yes, 0 if No",
+            "Bathrooms": "One +1", "Kitchen": "Overall Condition", "Living Area": "Overall Condition", "Loft": "+2 if Yes, 0 if No",
             "Fireplace": "+2 if Yes, 0 if No", "Seasonal/Year Round": "Seasonal 0, Year Round +2",
             "Washer and Dryer": "+2 if Yes, 0 if No",
             "Garage": "Number of Stalls", "Outdoor Storage": "Number of Sheds", "Backlot": "+2 if Yes, 0 if No", 
@@ -180,7 +180,7 @@
               <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-12">
                   <h1 className="text-4xl font-black text-slate-800 mb-4">Lake Cabins</h1>
-                  <p className="text-xl text-slate-600 mb-6">Score and compare lake cabins</p>
+                  <p className="text-xl text-slate-600 mb-6">64 Points Max Score</p>
                 </div>
 
                 <button onClick={addCabin} className="w-full mb-6 py-4 bg-gradient-to-r from-teal-600 to-blue-600 text-white rounded-xl hover:from-teal-700 hover:to-blue-700 shadow-lg flex items-center justify-center gap-3 text-lg font-bold">
@@ -197,7 +197,7 @@
                   <div className="mb-8 bg-gradient-to-br from-teal-600 to-blue-600 rounded-2xl shadow-2xl p-8 text-white">
                     <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
                       <span className="text-4xl">🏡</span>
-                      Your Cabins
+                      Graded Cabins 
                     </h2>
                     <div className="grid gap-4">
                       {cabins.map((cabin) => {
@@ -340,7 +340,7 @@
                     {[
                       { score: 2, label: 'Excellent', color: 'bg-green-500', textColor: 'text-green-700' },
                       { score: 1, label: 'Good', color: 'bg-green-300', textColor: 'text-green-700' },
-                      { score: 0, label: 'OK', color: 'bg-yellow-400', textColor: 'text-yellow-700' },
+                      { score: 0, label: 'OK, Zero, Default', color: 'bg-yellow-400', textColor: 'text-yellow-700' },
                       { score: -1, label: 'Not good', color: 'bg-red-300', textColor: 'text-red-600' },
                       { score: -2, label: 'Terrible', color: 'bg-red-500', textColor: 'text-red-700' },
                     ].map(({ score, label, color, textColor }) => (
