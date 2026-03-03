@@ -392,4 +392,252 @@
                                       </a>
                                     ) : null}
                                     <button
-                                      onClick={(e) => { e.stopPropagation(); 
+                                      onClick={(e) => { e.stopPropagation(); setEditingUrl(cabin.id); }}
+                                      className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors"
+                                    >
+                                      <i data-lucide="link" className="w-5 h-5"></i>
+                                    </button>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-sm uppercase text-white/80 mb-2">Total</div>
+                                    <div className={'text-5xl font-black ' + (total > 0 ? 'text-green-300' : total < 0 ? 'text-red-300' : 'text-yellow-300')}>
+                                      {total > 0 ? '+' : ''}{total}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); removeCabin(cabin.id); }} 
+                                    className="px-3 py-1 bg-red-500/80 hover:bg-red-600 text-white rounded text-sm"
+                                  >
+                                    <i data-lucide="trash-2" className="w-3 h-3 inline mr-1"></i>
+                                    Remove
+                                  </button>
+                                  <i data-lucide="chevron-down" className={'w-8 h-8 text-white transition-transform ' + (isExpanded ? 'rotate-180' : '')}></i>
+                                </div>
+                              </div>
+                            </div>
+
+                            {isExpanded && (
+                              <div className="px-6 pb-6 border-t border-white/20 pt-6">
+                                <div className="space-y-3">
+                                  {criteria.map((criterion, idx) => {
+                                    const weight = weights[criterion] || 1;
+                                    const rawScore = cabin.scores[criterion] || 0;
+                                    const weighted = rawScore * weight;
+                                    return (
+                                      <div key={idx} className="bg-white/10 rounded-xl p-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <div className="flex-1">
+                                            <span className="font-semibold text-white">
+                                              {criterion}
+                                              {weight > 1 && <span className="ml-2 text-xs bg-yellow-400 text-slate-800 px-2 py-0.5 rounded font-bold">2×</span>}
+                                            </span>
+                                            {guidelines[criterion] && <div className="text-xs italic text-white/60 mt-0.5">{guidelines[criterion]}</div>}
+                                          </div>
+                                          <span className="text-sm font-bold text-white/80">{weighted > 0 ? '+' : ''}{weighted}</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                          {[-2, -1, 0, 1, 2].map(score => (
+                                            <button 
+                                              key={score} 
+                                              onClick={() => updateScore(cabin.id, criterion, score)} 
+                                              className={'flex-1 py-3 rounded-lg font-bold text-white shadow-md transition-all ' + getScoreColor(score) + ' ' + (rawScore === score ? 'ring-4 ring-white scale-105' : 'opacity-70 hover:opacity-100')}
+                                            >
+                                              {score > 0 ? '+' : ''}{score}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-8 mb-8 bg-gradient-to-br from-white to-teal-50 rounded-xl shadow-lg p-4 border-2 border-teal-200">
+                  <div 
+                    onClick={() => setShowScoringGuide(!showScoringGuide)}
+                    className="flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <h3 className="text-sm font-bold text-slate-800 text-center">Scoring Guide</h3>
+                    <i data-lucide="chevron-down" className={'w-5 h-5 text-slate-800 transition-transform ' + (showScoringGuide ? 'rotate-180' : '')}></i>
+                  </div>
+                  {showScoringGuide && (
+                    <div className="flex flex-col gap-1.5 max-w-md mx-auto mt-3">
+                      {[
+                        { score: 2, label: 'Excellent', color: 'bg-green-500', textColor: 'text-green-700' },
+                        { score: 1, label: 'Good', color: 'bg-green-300', textColor: 'text-green-700' },
+                        { score: 0, label: 'OK, Zero, Default', color: 'bg-yellow-400', textColor: 'text-yellow-700' },
+                        { score: -1, label: 'Not good', color: 'bg-red-300', textColor: 'text-red-600' },
+                        { score: -2, label: 'Terrible', color: 'bg-red-500', textColor: 'text-red-700' },
+                      ].map(({ score, label, color, textColor }) => (
+                        <div key={score} className="flex items-center gap-2 bg-white/50 rounded-lg p-1.5">
+                          <div className={'w-7 h-7 ' + color + ' rounded-md shadow flex items-center justify-center'}>
+                            <span className="text-sm font-black text-white">{score > 0 ? '+' : ''}{score}</span>
+                          </div>
+                          <span className={'text-xs font-bold ' + textColor}>{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-8 bg-white/80 rounded-2xl shadow-lg p-6 border border-teal-100">
+                  <h3 className="text-xl font-bold text-slate-800 mb-4 text-center">Backup Your Data</h3>
+                  <div className="flex gap-4 max-w-md mx-auto">
+                    <button onClick={exportData} className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold flex items-center justify-center gap-2">
+                      <i data-lucide="download" className="w-5 h-5"></i>
+                      Export Data
+                    </button>
+                    <label className="flex-1 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold flex items-center justify-center gap-2 cursor-pointer">
+                      <i data-lucide="upload" className="w-5 h-5"></i>
+                      Import Data
+                      <input type="file" accept=".json" onChange={importData} className="hidden" />
+                    </label>
+                  </div>
+                  <p className="text-xs text-slate-600 text-center mt-3">Export to save a backup. Import to restore your cabins.</p>
+                </div>
+
+                <div className="mt-12 border-t-4 border-slate-300 pt-12">
+                  <h2 className="text-3xl font-black text-slate-800 text-center mb-6">Watershed Calculator</h2>
+                  
+                  <div className="bg-gradient-to-br from-slate-700 to-slate-900 rounded-2xl shadow-2xl p-8 text-white text-center mb-8">
+                    <div className="text-sm uppercase text-white/80 mb-2">Average Score</div>
+                    <div className={`text-7xl font-black mb-4 ${getWatershedScoreColor(averageScore)}`}>
+                      {averageScore !== null ? (averageScore > 0 ? '+' : '') + averageScore : '---'}
+                    </div>
+                    <div className="text-2xl font-bold">
+                      {getWatershedRating(averageScore)}
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                    <h3 className="text-2xl font-bold text-slate-800 mb-6">Input Data</h3>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Max Depth (feet)</label>
+                        <input
+                          type="number"
+                          value={maxDepth}
+                          onChange={(e) => setMaxDepth(e.target.value)}
+                          placeholder="Enter max depth"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Lake Acres</label>
+                        <input
+                          type="number"
+                          value={wsAcres}
+                          onChange={(e) => setWsAcres(e.target.value)}
+                          placeholder="Enter lake acres"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Littoral Acres</label>
+                        <input
+                          type="number"
+                          value={wsLittoralAcres}
+                          onChange={(e) => setWsLittoralAcres(e.target.value)}
+                          placeholder="Enter littoral acres"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Watershed Acres</label>
+                        <input
+                          type="number"
+                          value={watershedAcres}
+                          onChange={(e) => setWatershedAcres(e.target.value)}
+                          placeholder="Enter watershed acres"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-teal-600 to-blue-600 rounded-2xl shadow-lg p-6 text-white mb-6">
+                    <h3 className="text-2xl font-bold mb-6">Calculated Values</h3>
+                    
+                    <div className="space-y-4">
+                      <div className="bg-white/20 rounded-xl p-4">
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold">Watershed Ratio</span>
+                          <span className="text-xl">
+                            {watershedRatio !== null ? `${watershedRatio.toFixed(1)}:1` : '---'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/20 rounded-xl p-4">
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold">Littoral Percentage</span>
+                          <span className="text-xl">
+                            {littoralPercentage !== null ? `${littoralPercentage.toFixed(1)}%` : '---'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                    <h3 className="text-2xl font-bold text-slate-800 mb-6">Scores</h3>
+                    
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                        <span className="font-semibold text-slate-700">Watershed Ratio</span>
+                        <span className={`text-3xl font-black ${getWatershedScoreColor(watershedScore)}`}>
+                          {watershedScore !== null ? (watershedScore > 0 ? '+' : '') + watershedScore : '---'}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                        <span className="font-semibold text-slate-700">Max Depth</span>
+                        <span className={`text-3xl font-black ${getWatershedScoreColor(depthScore)}`}>
+                          {depthScore !== null ? (depthScore > 0 ? '+' : '') + depthScore : '---'}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                        <span className="font-semibold text-slate-700">Littoral Percentage</span>
+                        <span className={`text-3xl font-black ${getWatershedScoreColor(littoralScoreCalc)}`}>
+                          {littoralScoreCalc !== null ? (littoralScoreCalc > 0 ? '+' : '') + littoralScoreCalc : '---'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/80 rounded-xl p-4">
+                    <h3 className="text-sm font-bold text-slate-700 mb-3">Scoring Reference</h3>
+                    <div className="space-y-2 text-xs text-slate-600">
+                      <div><strong>Watershed Ratio:</strong> &lt;5:1 (+2) | 5-10:1 (+1) | 10-15:1 (0) | 15-25:1 (-1) | 25+:1 (-2)</div>
+                      <div><strong>Max Depth:</strong> 80+ ft (+2) | 60-79 ft (+1) | 45-59 ft (0) | 30-44 ft (-1) | &lt;30 ft (-2)</div>
+                      <div><strong>Littoral %:</strong> &lt;30% (+2) | 30-40% (+1) | 40-50% (0) | 50-65% (-1) | &gt;65% (-2)</div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<CabinScorer />);
+        
+        setTimeout(() => { lucide.createIcons(); }, 100);
+    </script>
+</body>
+</html>
