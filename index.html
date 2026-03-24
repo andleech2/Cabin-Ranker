@@ -285,6 +285,12 @@
             return 'text-gray-400';
           };
 
+          const getLakeNameColor = (score) => {
+            if (score >= 1) return 'text-green-600';
+            if (score === 0) return 'text-yellow-600';
+            return 'text-red-600';
+          };
+
           const saveLake = () => {
             if (!lakeName.trim()) {
               alert('Please enter a lake name');
@@ -797,11 +803,11 @@
                             {sortedLakes.map((lake) => {
                               const isExpanded = expandedLakes.has(lake.id);
                               return (
-                                <div key={lake.id} className="bg-white rounded-xl shadow-lg overflow-hidden">
+                                <div key={lake.id} className="bg-slate-50 rounded-xl shadow-lg overflow-hidden">
                                   <div className="px-4 py-3">
                                   <div className="cursor-pointer" onClick={() => toggleLakeExpanded(lake.id)}>
                                     <div className="flex justify-between items-center">
-                                      <h3 className="text-lg font-bold text-slate-800">{lake.name}</h3>
+                                      <h3 className={'text-lg font-bold ' + getLakeNameColor(lake.averageScore)}>{lake.name}</h3>
                                       <div className="flex items-center gap-3">
                                         <span className={'text-2xl font-black ' + (lake.averageScore > 0 ? 'text-green-500' : lake.averageScore < 0 ? 'text-red-500' : 'text-yellow-500')}>
                                           {lake.averageScore > 0 ? '+' : ''}{lake.averageScore}
