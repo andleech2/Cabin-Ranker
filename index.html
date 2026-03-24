@@ -786,8 +786,13 @@
                                 <div className="p-6">
                                   <div className="cursor-pointer" onClick={() => toggleLakeExpanded(lake.id)}>
                                     <div className="flex justify-between items-center">
-                                      <h3 className="text-2xl font-bold text-slate-800">{lake.name}</h3>
-                                      <i data-lucide="chevron-down" className={'w-8 h-8 text-slate-600 transition-transform ' + (isExpanded ? 'rotate-180' : '')}></i>
+                                      <h3 className="text-lg font-bold text-slate-800">{lake.name}</h3>
+                                      <div className="flex items-center gap-3">
+                                        <span className={'text-2xl font-black ' + (lake.averageScore > 0 ? 'text-green-500' : lake.averageScore < 0 ? 'text-red-500' : 'text-yellow-500')}>
+                                          {lake.averageScore > 0 ? '+' : ''}{lake.averageScore}
+                                        </span>
+                                        <i data-lucide="chevron-down" className={'w-6 h-6 text-slate-600 transition-transform ' + (isExpanded ? 'rotate-180' : '')}></i>
+                                      </div>
                                     </div>
                                   </div>
 
