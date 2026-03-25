@@ -62,7 +62,7 @@
           const [watershedAcres, setWatershedAcres] = useState('');
           const [showScoringGuide, setShowScoringGuide] = useState(false);
           const [savedLakes, setSavedLakes] = useState([]);
-          const [watershedView, setWatershedView] = useState('calculator');
+          const [watershedView, setWatershedView] = useState('saved');
           const [lakeName, setLakeName] = useState('');
           const [expandedLakes, setExpandedLakes] = useState(new Set());
           const [lakeSortBy, setLakeSortBy] = useState('alpha');
@@ -338,7 +338,7 @@
 
           const sortedLakes = lakeSortBy === 'alpha' 
             ? [...savedLakes].sort((a, b) => a.name.localeCompare(b.name))
-            : [...savedLakes].sort((a, b) => b.averageScore - a.averageScore);
+            : [...savedLakes].sort((a, b) => b.watershedScore - a.watershedScore);
 
           const exportLakes = () => {
             const blob = new Blob([JSON.stringify(savedLakes, null, 2)], { type: 'application/json' });
@@ -612,16 +612,16 @@
                   
                   <div className="flex gap-4 mb-6">
                     <button 
-                      onClick={() => setWatershedView('calculator')}
-                      className={'flex-1 py-3 rounded-lg font-bold transition-colors ' + (watershedView === 'calculator' ? 'bg-blue-600 text-white' : 'bg-white text-slate-700 border-2 border-slate-300')}
-                    >
-                      Calculator
-                    </button>
-                    <button 
                       onClick={() => setWatershedView('saved')}
                       className={'flex-1 py-3 rounded-lg font-bold transition-colors ' + (watershedView === 'saved' ? 'bg-blue-600 text-white' : 'bg-white text-slate-700 border-2 border-slate-300')}
                     >
                       Saved Lakes ({savedLakes.length})
+                    </button>
+                    <button 
+                      onClick={() => setWatershedView('calculator')}
+                      className={'flex-1 py-3 rounded-lg font-bold transition-colors ' + (watershedView === 'calculator' ? 'bg-blue-600 text-white' : 'bg-white text-slate-700 border-2 border-slate-300')}
+                    >
+                      Calculator
                     </button>
                   </div>
 
@@ -794,7 +794,7 @@
                               onClick={() => setLakeSortBy(lakeSortBy === 'alpha' ? 'score' : 'alpha')}
                               className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
                             >
-                              {lakeSortBy === 'alpha' ? 'Alphabetical' : 'Highest Score'}
+                              {lakeSortBy === 'alpha' ? 'Alphabetical' : 'Watershed Score'}
                               <i data-lucide="chevron-down" className={'w-4 h-4 transition-transform ' + (lakeSortBy === 'score' ? 'rotate-180' : '')}></i>
                             </button>
                           </div>
@@ -803,11 +803,11 @@
                             {sortedLakes.map((lake) => {
                               const isExpanded = expandedLakes.has(lake.id);
                               return (
-                                <div key={lake.id} className="bg-slate-50 rounded-xl shadow-lg overflow-hidden">
-                                  <div className="px-4 py-3">
+                                <div key={lake.id} className="bg-gray-200 rounded-xl shadow-lg overflow-hidden">
+                                  <div className="px-4 py-3 bg-gray-200">
                                   <div className="cursor-pointer" onClick={() => toggleLakeExpanded(lake.id)}>
                                     <div className="flex justify-between items-center">
-                                      <h3 className={'text-lg font-bold ' + getLakeNameColor(lake.averageScore)}>{lake.name}</h3>
+                                      <h3 className={'text-lg font-bold ' + getLakeNameColor(lake.watershedScore)}>{lake.name}</h3>
                                       <div className="flex items-center gap-3">
                                         <span className={'text-2xl font-black ' + (lake.averageScore > 0 ? 'text-green-500' : lake.averageScore < 0 ? 'text-red-500' : 'text-yellow-500')}>
                                           {lake.averageScore > 0 ? '+' : ''}{lake.averageScore}
@@ -818,7 +818,7 @@
                                   </div>
 
                                   {isExpanded && (
-                                    <div className="px-4 pb-4 mt-2">
+                                    <div className="px-4 pb-4 mt-2 bg-gray-200">
                                       <div className="bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl p-6 text-white text-center mb-4">
                                         <div className="text-sm uppercase text-white/80 mb-2">Average Score</div>
                                         <div className={'text-5xl font-black ' + (lake.averageScore > 0 ? 'text-green-300' : lake.averageScore < 0 ? 'text-red-300' : 'text-yellow-300')}>
