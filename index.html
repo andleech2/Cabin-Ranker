@@ -23,7 +23,7 @@
 
         function CabinScorer() {
           const criteria = [
-            "Distance from Home", "Lake Depth", "Lake Acreage", "Littoral Percentage", "Watershed Score", "Frontage", "Beach", "Lake Bottom",
+            "Distance from Home", "Resort", "Watershed Score", "Depth Score", "Littoral Score", "Frontage", "Beach", "Lake Bottom",
             "Swimming Depth", "Dock Condition", "Dock/Lift Included", "Backyard Slope",
             "Cabin Condition", "Bedrooms", "Bathrooms", "Kitchen", "Living Area", "Loft",
             "Fireplace", "Seasonal/Year Round", "Washer and Dryer", "Garage", "Outdoor Storage", "Backlot", "Lot size",
@@ -31,15 +31,15 @@
           ];
 
           const weights = {
-            "Distance from Home": 2, "Lake Depth": 2, "Lake Acreage": 2, "Littoral Percentage": 2, "Watershed Score": 2, "Beach": 2, "Swimming Depth": 2,
+            "Distance from Home": 2, "Resort": 2, "Watershed Score": 2, "Depth Score": 2, "Littoral Score": 2, "Beach": 2, "Swimming Depth": 2,
             "Cabin Condition": 2, "Garage": 2, "Backlot": 2
           };
 
           const guidelines = {
-            "Distance from Home": "60 Mins +1, Under 60 Mins +2", "Lake Depth": "25' Min +1, 30' +2",
-            "Lake Acreage": "300-500 = +1, 500-1000 = +2", "Littoral Percentage": "40%-50% = +1, Less than 40% = +2",
-            "Watershed Score": "Use calculator below",
-            "Frontage": "50' +1", "Beach": "Sand +2", "Lake Bottom": "Hard +2",
+            "Distance from Home": "60 Mins +1, Under 60 Mins +2", "Resort": "+2 No, -2 Yes",
+            "Watershed Score": "From calculation", "Depth Score": "From calculation",
+            "Littoral Score": "From calculation",
+            "Frontage": "50' = 0, 75' = +1, 100' = +2", "Beach": "Sand +2", "Lake Bottom": "Hard +2",
             "Swimming Depth": "3' at Dock +1, Deeper +2", "Dock/Lift Included": " Dock +1, Lift +2", 
             "Backyard Slope": "Moderate +1, Gentle +2",
             "Cabin Condition": "Needs Little, +1, Needs Nothing +2", "Bedrooms": "Two +1",
@@ -66,6 +66,8 @@
           const [lakeName, setLakeName] = useState('');
           const [expandedLakes, setExpandedLakes] = useState(new Set());
           const [lakeSortBy, setLakeSortBy] = useState('alpha');
+          const [editingLakeName, setEditingLakeName] = useState(null);
+          const [editingLakeNotes, setEditingLakeNotes] = useState(null);
 
           useEffect(() => {
             const saved = localStorage.getItem('cabinData');
@@ -114,7 +116,7 @@
             if (window.lucide) {
               window.lucide.createIcons();
             }
-          }, [cabins, expanded, expandedLakes, lakeSortBy, watershedView]);
+          }, [cabins, expanded, expandedLakes, lakeSortBy, watershedView, editingLakeName, editingLakeNotes]);
 
           const addCabin = () => {
             const scores = {};
@@ -312,7 +314,8 @@
               watershedScore: watershedScore,
               depthScore: depthScore,
               littoralScore: littoralScoreCalc,
-              averageScore: averageScore
+              averageScore: averageScore,
+              notes: ''
             };
             setSavedLakes([newLake, ...savedLakes]);
             setLakeName('');
@@ -327,6 +330,16 @@
             if (window.confirm('Delete this lake?')) {
               setSavedLakes(savedLakes.filter(l => l.id !== id));
             }
+          };
+
+          const updateLakeName = (id, newName) => {
+            setSavedLakes(savedLakes.map(l => l.id === id ? { ...l, name: newName } : l));
+            setEditingLakeName(null);
+          };
+
+          const updateLakeNotes = (id, newNotes) => {
+            setSavedLakes(savedLakes.map(l => l.id === id ? { ...l, notes: newNotes } : l));
+            setEditingLakeNotes(null);
           };
 
           const toggleLakeExpanded = (id) => {
@@ -805,14 +818,31 @@
                               return (
                                 <div key={lake.id} className="bg-gray-200 rounded-xl shadow-lg overflow-hidden">
                                   <div className="px-4 py-3 bg-gray-200">
-                                  <div className="cursor-pointer" onClick={() => toggleLakeExpanded(lake.id)}>
+                                  <div onClick={() => toggleLakeExpanded(lake.id)}>
                                     <div className="flex justify-between items-center">
-                                      <h3 className={'text-lg font-bold ' + getLakeNameColor(lake.watershedScore)}>{lake.name}</h3>
+                                      {editingLakeName === lake.id ? (
+                                        <input
+                                          type="text"
+                                          defaultValue={lake.name}
+                                          onBlur={(e) => updateLakeName(lake.id, e.target.value)}
+                                          onKeyDown={(e) => { if (e.key === 'Enter') updateLakeName(lake.id, e.target.value); }}
+                                          onClick={(e) => e.stopPropagation()}
+                                          autoFocus
+                                          className={'text-lg font-bold px-2 py-1 border-2 border-blue-500 rounded ' + getLakeNameColor(lake.watershedScore)}
+                                        />
+                                      ) : (
+                                        <h3 
+                                          className={'text-lg font-bold cursor-pointer ' + getLakeNameColor(lake.watershedScore)}
+                                          onClick={(e) => { e.stopPropagation(); setEditingLakeName(lake.id); }}
+                                        >
+                                          {lake.name}
+                                        </h3>
+                                      )}
                                       <div className="flex items-center gap-3">
                                         <span className={'text-2xl font-black ' + (lake.averageScore > 0 ? 'text-green-500' : lake.averageScore < 0 ? 'text-red-500' : 'text-yellow-500')}>
                                           {lake.averageScore > 0 ? '+' : ''}{lake.averageScore}
                                         </span>
-                                        <i data-lucide="chevron-down" className={'w-6 h-6 text-slate-600 transition-transform ' + (isExpanded ? 'rotate-180' : '')}></i>
+                                        <i data-lucide="chevron-down" className={'w-6 h-6 text-slate-600 transition-transform cursor-pointer ' + (isExpanded ? 'rotate-180' : '')}></i>
                                       </div>
                                     </div>
                                   </div>
@@ -884,9 +914,31 @@
                                           </div>
                                         </div>
 
+                                        <div className="mt-4">
+                                          <h4 className="font-bold text-slate-700 mb-2">Notes</h4>
+                                          {editingLakeNotes === lake.id ? (
+                                            <input
+                                              type="text"
+                                              defaultValue={lake.notes || ''}
+                                              onBlur={(e) => updateLakeNotes(lake.id, e.target.value)}
+                                              onKeyDown={(e) => { if (e.key === 'Enter') updateLakeNotes(lake.id, e.target.value); }}
+                                              autoFocus
+                                              className="w-full px-3 py-2 border-2 border-blue-500 rounded-lg text-sm"
+                                              placeholder="Add notes about this lake..."
+                                            />
+                                          ) : (
+                                            <div
+                                              onClick={() => setEditingLakeNotes(lake.id)}
+                                              className="w-full px-3 py-2 bg-white rounded-lg text-sm text-slate-600 cursor-pointer hover:bg-slate-50 min-h-[40px] flex items-center"
+                                            >
+                                              {lake.notes || 'Click to add notes...'}
+                                            </div>
+                                          )}
+                                        </div>
+
                                         <button
                                           onClick={(e) => { e.stopPropagation(); deleteLake(lake.id); }}
-                                          className="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold flex items-center justify-center gap-2"
+                                          className="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold flex items-center justify-center gap-2 mt-4"
                                         >
                                           <i data-lucide="trash-2" className="w-4 h-4"></i>
                                           Delete Lake
