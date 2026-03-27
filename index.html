@@ -23,7 +23,7 @@
 
         function CabinScorer() {
           const criteria = [
-            "Distance from Home", "Resort", "Watershed Score", "Depth Score", "Littoral Score", "Frontage", "Beach", "Lake Bottom",
+            "Distance from Home", "Lake Score", "Frontage", "Beach", "Lake Bottom",
             "Swimming Depth", "Dock Condition", "Dock/Lift Included", "Backyard Slope",
             "Cabin Condition", "Bedrooms", "Bathrooms", "Kitchen", "Living Area", "Loft",
             "Fireplace", "Seasonal/Year Round", "Washer and Dryer", "Garage", "Outdoor Storage", "Backlot", "Lot size",
@@ -31,14 +31,12 @@
           ];
 
           const weights = {
-            "Distance from Home": 2, "Resort": 2, "Watershed Score": 2, "Depth Score": 2, "Littoral Score": 2, "Beach": 2, "Swimming Depth": 2,
+            "Distance from Home": 2, "Lake Score": 2, "Beach": 2, "Swimming Depth": 2,
             "Cabin Condition": 2, "Garage": 2, "Backlot": 2
           };
 
           const guidelines = {
-            "Distance from Home": "60 Mins +1, Under 60 Mins +2", "Resort": "+2 No, -2 Yes",
-            "Watershed Score": "From calculation", "Depth Score": "From calculation",
-            "Littoral Score": "From calculation",
+            "Distance from Home": "60 Mins +1, Under 60 Mins +2", "Lake Score": "Enter sum from calculator",
             "Frontage": "50' = 0, 75' = +1, 100' = +2", "Beach": "Sand +2", "Lake Bottom": "Hard +2",
             "Swimming Depth": "3' at Dock +1, Deeper +2", "Dock/Lift Included": " Dock +1, Lift +2", 
             "Backyard Slope": "Moderate +1, Gentle +2",
@@ -69,7 +67,6 @@
           const [editingLakeName, setEditingLakeName] = useState(null);
           const [editingLakeNotes, setEditingLakeNotes] = useState(null);
           const [health, setHealth] = useState('');
-          const [waterQuality, setWaterQuality] = useState('');
           const [tp, setTp] = useState('');
 
           useEffect(() => {
@@ -265,24 +262,11 @@
             return null;
           };
 
-          const scoreWaterQuality = (wq) => {
-            if (!wq) return null;
-            const w = parseFloat(wq);
-            if (w >= 90) return 2;
-            if (w >= 80) return 1;
-            if (w >= 70) return 0;
-            if (w >= 60) return -1;
-            if (w >= 50) return -2;
-            return null;
-          };
-
           const scoreTp = (tpValue) => {
             if (!tpValue) return null;
             const t = parseFloat(tpValue);
-            if (t <= 10) return 2;
-            if (t <= 15) return 1;
-            if (t <= 20) return 0;
-            if (t <= 25) return -1;
+            if (t >= 5 && t <= 15) return 2;
+            if (t > 15 && t <= 25) return 0;
             return -2;
           };
 
@@ -293,36 +277,34 @@
           const depthScore = scoreMeanDepth(meanDepth);
           const littoralScoreCalc = scoreLittoralPercentage(littoralPercentage);
           const healthScore = scoreHealth(health);
-          const waterQualityScore = scoreWaterQuality(waterQuality);
           const tpScore = scoreTp(tp);
 
           const calculateWatershedAverage = () => {
-            const scores = [watershedScore, depthScore, littoralScoreCalc, healthScore, waterQualityScore, tpScore].filter(s => s !== null);
+            const scores = [watershedScore, depthScore, littoralScoreCalc, healthScore, tpScore].filter(s => s !== null);
             if (scores.length === 0) return null;
-            const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-            return Math.round(avg);
+            const sum = scores.reduce((a, b) => a + b, 0);
+            return sum;
           };
 
           const averageScore = calculateWatershedAverage();
 
           const getWatershedRating = (score) => {
             if (score === null) return '';
-            if (score === 2) return 'Elite Stability';
-            if (score === 1) return 'Very Good';
-            if (score === 0) return 'Acceptable';
-            if (score === -1) return 'Likely Fluctuation Frustration';
-            if (score === -2) return 'Walk Away';
-            return '';
+            if (score >= 8) return 'Elite Stability';
+            if (score >= 5) return 'Very Good';
+            if (score >= 2) return 'Good';
+            if (score >= -1) return 'Acceptable';
+            if (score >= -4) return 'Likely Fluctuation';
+            return 'Walk Away';
           };
 
           const getWatershedScoreColor = (score) => {
             if (score === null) return 'text-gray-400';
-            if (score === 2) return 'text-green-500';
-            if (score === 1) return 'text-green-400';
-            if (score === 0) return 'text-yellow-400';
-            if (score === -1) return 'text-red-400';
-            if (score === -2) return 'text-red-500';
-            return 'text-gray-400';
+            if (score >= 2) return 'text-green-500';
+            if (score >= 1) return 'text-green-400';
+            if (score >= 0) return 'text-yellow-400';
+            if (score >= -1) return 'text-red-400';
+            return 'text-red-500';
           };
 
           const getLakeNameColor = (score) => {
@@ -348,7 +330,6 @@
               littoralAcres: wsLittoralAcres,
               meanDepth: meanDepth,
               health: health,
-              waterQuality: waterQuality,
               tp: tp,
               watershedRatio: watershedRatio,
               littoralPercentage: littoralPercentage,
@@ -356,7 +337,6 @@
               depthScore: depthScore,
               littoralScore: littoralScoreCalc,
               healthScore: healthScore,
-              waterQualityScore: waterQualityScore,
               tpScore: tpScore,
               averageScore: averageScore,
               notes: ''
@@ -368,7 +348,6 @@
             setWsLittoralAcres('');
             setMeanDepth('');
             setHealth('');
-            setWaterQuality('');
             setTp('');
             alert('Lake saved!');
           };
@@ -450,7 +429,7 @@
                   <div className="mb-8 bg-gradient-to-br from-teal-600 to-blue-600 rounded-2xl shadow-2xl p-8 text-white">
                     <h2 className="text-xl mb-6 flex items-center gap-3">
                       <span className="text-4xl">🏡</span>
-                      74 Points Max Score 
+                      62 Points Max Score 
                     </h2>
                     <div className="grid gap-4">
                       {cabins.map((cabin) => {
@@ -599,17 +578,27 @@
                                           </div>
                                           <span className="text-sm font-bold text-white/80">{weighted > 0 ? '+' : ''}{weighted}</span>
                                         </div>
-                                        <div className="flex gap-2">
-                                          {[-2, -1, 0, 1, 2].map(score => (
-                                            <button 
-                                              key={score} 
-                                              onClick={() => updateScore(cabin.id, criterion, score)} 
-                                              className={'flex-1 py-3 rounded-lg font-bold text-white shadow-md transition-all ' + getScoreColor(score) + ' ' + (rawScore === score ? 'ring-4 ring-white scale-105' : 'opacity-70 hover:opacity-100')}
-                                            >
-                                              {score > 0 ? '+' : ''}{score}
-                                            </button>
-                                          ))}
-                                        </div>
+                                        {criterion === "Lake Score" ? (
+                                          <input
+                                            type="number"
+                                            value={rawScore || ''}
+                                            onChange={(e) => updateScore(cabin.id, criterion, parseInt(e.target.value) || 0)}
+                                            placeholder="Enter lake score"
+                                            className="w-full px-4 py-3 border-2 border-white rounded-lg focus:outline-none focus:border-yellow-400 text-lg text-center font-bold"
+                                          />
+                                        ) : (
+                                          <div className="flex gap-2">
+                                            {[-2, -1, 0, 1, 2].map(score => (
+                                              <button 
+                                                key={score} 
+                                                onClick={() => updateScore(cabin.id, criterion, score)} 
+                                                className={'flex-1 py-3 rounded-lg font-bold text-white shadow-md transition-all ' + getScoreColor(score) + ' ' + (rawScore === score ? 'ring-4 ring-white scale-105' : 'opacity-70 hover:opacity-100')}
+                                              >
+                                                {score > 0 ? '+' : ''}{score}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                   })}
@@ -768,18 +757,7 @@
                           type="text"
                           value={health}
                           onChange={(e) => setHealth(e.target.value)}
-                          placeholder="C, C-, B-, B, B+"
-                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Water Quality</label>
-                        <input
-                          type="number"
-                          value={waterQuality}
-                          onChange={(e) => setWaterQuality(e.target.value)}
-                          placeholder="50-100"
+                          placeholder="C, C+, B-, B, B+"
                           className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
                         />
                       </div>
@@ -854,13 +832,6 @@
                       </div>
 
                       <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
-                        <span className="font-semibold text-slate-700">Water Quality</span>
-                        <span className={`text-3xl font-black ${getWatershedScoreColor(waterQualityScore)}`}>
-                          {waterQualityScore !== null ? (waterQualityScore > 0 ? '+' : '') + waterQualityScore : '---'}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
                         <span className="font-semibold text-slate-700">TP</span>
                         <span className={`text-3xl font-black ${getWatershedScoreColor(tpScore)}`}>
                           {tpScore !== null ? (tpScore > 0 ? '+' : '') + tpScore : '---'}
@@ -875,9 +846,8 @@
                       <div><strong>Watershed Ratio:</strong> &lt;5:1 (+2) | 5-10:1 (+1) | 10-15:1 (0) | 15-25:1 (-1) | 25+:1 (-2)</div>
                       <div><strong>Mean Depth:</strong> 20+ ft (+2) | 15-19 ft (+1) | 10-14 ft (0) | 6-9 ft (-1) | &lt;6 ft (-2)</div>
                       <div><strong>Littoral %:</strong> &lt;30% (+2) | 30-40% (+1) | 40-50% (0) | 50-65% (-1) | &gt;65% (-2)</div>
-                      <div><strong>Health:</strong> B+ (+2) | B (+1) | B- (0) | C- (-1) | C (-2)</div>
-                      <div><strong>Water Quality:</strong> 90s (+2) | 80s (+1) | 70s (0) | 60s (-2) | 50s (-2)</div>
-                      <div><strong>TP:</strong> 5-10 (+2) | 10-15 (+1) | 15-20 (0) | 20-25 (-1) | 25+ (-2)</div>
+                      <div><strong>Health:</strong> B+ (+2) | B (+1) | B- (0) | C+ (-1) | C (-2)</div>
+                      <div><strong>TP:</strong> 5-15 (+2) | 15-25 (0) | 25+ (-2)</div>
                     </div>
                   </div>
                     </>
@@ -987,10 +957,6 @@
                                             <span className="ml-2 font-semibold">{lake.health || '---'}</span>
                                           </div>
                                           <div>
-                                            <span className="text-sm text-slate-600">Water Quality:</span>
-                                            <span className="ml-2 font-semibold">{lake.waterQuality || '---'}</span>
-                                          </div>
-                                          <div>
                                             <span className="text-sm text-slate-600">TP:</span>
                                             <span className="ml-2 font-semibold">{lake.tp || '---'}</span>
                                           </div>
@@ -1032,12 +998,6 @@
                                             <div className="text-xs text-slate-600 mb-1">Health</div>
                                             <div className={'text-2xl font-black ' + ((lake.healthScore || 0) > 0 ? 'text-green-500' : (lake.healthScore || 0) < 0 ? 'text-red-500' : 'text-yellow-500')}>
                                               {lake.healthScore !== null && lake.healthScore !== undefined ? ((lake.healthScore > 0 ? '+' : '') + lake.healthScore) : '---'}
-                                            </div>
-                                          </div>
-                                          <div className="bg-slate-50 rounded-lg p-3 text-center">
-                                            <div className="text-xs text-slate-600 mb-1">Water Quality</div>
-                                            <div className={'text-2xl font-black ' + ((lake.waterQualityScore || 0) > 0 ? 'text-green-500' : (lake.waterQualityScore || 0) < 0 ? 'text-red-500' : 'text-yellow-500')}>
-                                              {lake.waterQualityScore !== null && lake.waterQualityScore !== undefined ? ((lake.waterQualityScore > 0 ? '+' : '') + lake.waterQualityScore) : '---'}
                                             </div>
                                           </div>
                                           <div className="bg-slate-50 rounded-lg p-3 text-center">
