@@ -23,7 +23,7 @@
 
         function CabinScorer() {
           const criteria = [
-            "Distance from Home", "Lake Score", "Frontage", "Beach", "Lake Bottom",
+            "Lake Score", "Distance from Home", "Frontage", "Beach", "Lake Bottom",
             "Swimming Depth", "Dock Condition", "Dock/Lift Included", "Backyard Slope",
             "Cabin Condition", "Bedrooms", "Bathrooms", "Kitchen", "Living Area", "Loft",
             "Fireplace", "Seasonal/Year Round", "Washer and Dryer", "Garage", "Outdoor Storage", "Backlot", "Lot size",
@@ -232,25 +232,6 @@
             return -2;
           };
 
-          const scoreMeanDepth = (depth) => {
-            if (!depth) return null;
-            const d = parseFloat(depth);
-            if (d >= 20) return 2;
-            if (d >= 15) return 1;
-            if (d >= 10) return 0;
-            if (d >= 6) return -1;
-            return -2;
-          };
-
-          const scoreLittoralPercentage = (percentage) => {
-            if (percentage === null) return null;
-            if (percentage < 30) return 2;
-            if (percentage < 40) return 1;
-            if (percentage < 50) return 0;
-            if (percentage < 65) return -1;
-            return -2;
-          };
-
           const scoreHealth = (grade) => {
             if (!grade) return null;
             const g = grade.toUpperCase().trim();
@@ -274,29 +255,17 @@
           const littoralPercentage = calculateLittoralPercentage();
           
           const watershedScore = scoreWatershedRatio(watershedRatio);
-          const depthScore = scoreMeanDepth(meanDepth);
-          const littoralScoreCalc = scoreLittoralPercentage(littoralPercentage);
           const healthScore = scoreHealth(health);
           const tpScore = scoreTp(tp);
 
           const calculateWatershedAverage = () => {
-            const scores = [watershedScore, depthScore, littoralScoreCalc, healthScore, tpScore].filter(s => s !== null);
+            const scores = [watershedScore, healthScore, tpScore].filter(s => s !== null);
             if (scores.length === 0) return null;
             const sum = scores.reduce((a, b) => a + b, 0);
             return sum;
           };
 
           const averageScore = calculateWatershedAverage();
-
-          const getWatershedRating = (score) => {
-            if (score === null) return '';
-            if (score >= 8) return 'Elite Stability';
-            if (score >= 5) return 'Very Good';
-            if (score >= 2) return 'Good';
-            if (score >= -1) return 'Acceptable';
-            if (score >= -4) return 'Likely Fluctuation';
-            return 'Walk Away';
-          };
 
           const getWatershedScoreColor = (score) => {
             if (score === null) return 'text-gray-400';
@@ -327,15 +296,11 @@
               name: lakeName,
               acres: wsAcres,
               watershedAcres: watershedAcres,
-              littoralAcres: wsLittoralAcres,
-              meanDepth: meanDepth,
               health: health,
               tp: tp,
               watershedRatio: watershedRatio,
               littoralPercentage: littoralPercentage,
               watershedScore: watershedScore,
-              depthScore: depthScore,
-              littoralScore: littoralScoreCalc,
               healthScore: healthScore,
               tpScore: tpScore,
               averageScore: averageScore,
@@ -345,8 +310,6 @@
             setLakeName('');
             setWsAcres('');
             setWatershedAcres('');
-            setWsLittoralAcres('');
-            setMeanDepth('');
             setHealth('');
             setTp('');
             alert('Lake saved!');
@@ -694,12 +657,9 @@
                       </div>
                   
                       <div className="bg-gradient-to-br from-slate-700 to-slate-900 rounded-2xl shadow-2xl p-8 text-white text-center mb-8">
-                    <div className="text-sm uppercase text-white/80 mb-2">Average Score</div>
-                    <div className={`text-7xl font-black mb-4 ${getWatershedScoreColor(averageScore)}`}>
+                    <div className="text-sm uppercase text-white/80 mb-2">Total Score</div>
+                    <div className={`text-7xl font-black ${getWatershedScoreColor(averageScore)}`}>
                       {averageScore !== null ? (averageScore > 0 ? '+' : '') + averageScore : '---'}
-                    </div>
-                    <div className="text-2xl font-bold">
-                      {getWatershedRating(averageScore)}
                     </div>
                   </div>
 
@@ -725,28 +685,6 @@
                           value={watershedAcres}
                           onChange={(e) => setWatershedAcres(e.target.value)}
                           placeholder="Enter watershed acres"
-                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Littoral Acres</label>
-                        <input
-                          type="number"
-                          value={wsLittoralAcres}
-                          onChange={(e) => setWsLittoralAcres(e.target.value)}
-                          placeholder="Enter littoral acres"
-                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Mean Depth (feet)</label>
-                        <input
-                          type="number"
-                          value={meanDepth}
-                          onChange={(e) => setMeanDepth(e.target.value)}
-                          placeholder="Enter mean depth"
                           className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
                         />
                       </div>
@@ -811,20 +749,6 @@
                       </div>
 
                       <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
-                        <span className="font-semibold text-slate-700">Mean Depth</span>
-                        <span className={`text-3xl font-black ${getWatershedScoreColor(depthScore)}`}>
-                          {depthScore !== null ? (depthScore > 0 ? '+' : '') + depthScore : '---'}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
-                        <span className="font-semibold text-slate-700">Littoral Percentage</span>
-                        <span className={`text-3xl font-black ${getWatershedScoreColor(littoralScoreCalc)}`}>
-                          {littoralScoreCalc !== null ? (littoralScoreCalc > 0 ? '+' : '') + littoralScoreCalc : '---'}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
                         <span className="font-semibold text-slate-700">Health</span>
                         <span className={`text-3xl font-black ${getWatershedScoreColor(healthScore)}`}>
                           {healthScore !== null ? (healthScore > 0 ? '+' : '') + healthScore : '---'}
@@ -844,8 +768,6 @@
                     <h3 className="text-sm font-bold text-slate-700 mb-3">Scoring Reference</h3>
                     <div className="space-y-2 text-xs text-slate-600">
                       <div><strong>Watershed Ratio:</strong> &lt;5:1 (+2) | 5-10:1 (+1) | 10-15:1 (0) | 15-25:1 (-1) | 25+:1 (-2)</div>
-                      <div><strong>Mean Depth:</strong> 20+ ft (+2) | 15-19 ft (+1) | 10-14 ft (0) | 6-9 ft (-1) | &lt;6 ft (-2)</div>
-                      <div><strong>Littoral %:</strong> &lt;30% (+2) | 30-40% (+1) | 40-50% (0) | 50-65% (-1) | &gt;65% (-2)</div>
                       <div><strong>Health:</strong> B+ (+2) | B (+1) | B- (0) | C+ (-1) | C (-2)</div>
                       <div><strong>TP:</strong> 5-15 (+2) | 15-25 (0) | 25+ (-2)</div>
                     </div>
@@ -924,12 +846,9 @@
                                   {isExpanded && (
                                     <div className="px-4 pb-4 mt-2 bg-gray-200">
                                       <div className="bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl p-6 text-white text-center mb-4">
-                                        <div className="text-sm uppercase text-white/80 mb-2">Average Score</div>
+                                        <div className="text-sm uppercase text-white/80 mb-2">Total Score</div>
                                         <div className={'text-5xl font-black ' + (lake.averageScore > 0 ? 'text-green-300' : lake.averageScore < 0 ? 'text-red-300' : 'text-yellow-300')}>
                                           {lake.averageScore > 0 ? '+' : ''}{lake.averageScore}
-                                        </div>
-                                        <div className="text-xl font-bold mt-2">
-                                          {getWatershedRating(lake.averageScore)}
                                         </div>
                                       </div>
 
@@ -943,14 +862,6 @@
                                           <div>
                                             <span className="text-sm text-slate-600">Watershed Acres:</span>
                                             <span className="ml-2 font-semibold">{lake.watershedAcres}</span>
-                                          </div>
-                                          <div>
-                                            <span className="text-sm text-slate-600">Littoral Acres:</span>
-                                            <span className="ml-2 font-semibold">{lake.littoralAcres}</span>
-                                          </div>
-                                          <div>
-                                            <span className="text-sm text-slate-600">Mean Depth:</span>
-                                            <span className="ml-2 font-semibold">{lake.meanDepth} ft</span>
                                           </div>
                                           <div>
                                             <span className="text-sm text-slate-600">Health:</span>
@@ -980,18 +891,6 @@
                                             <div className="text-xs text-slate-600 mb-1">Watershed</div>
                                             <div className={'text-2xl font-black ' + (lake.watershedScore > 0 ? 'text-green-500' : lake.watershedScore < 0 ? 'text-red-500' : 'text-yellow-500')}>
                                               {lake.watershedScore > 0 ? '+' : ''}{lake.watershedScore}
-                                            </div>
-                                          </div>
-                                          <div className="bg-slate-50 rounded-lg p-3 text-center">
-                                            <div className="text-xs text-slate-600 mb-1">Depth</div>
-                                            <div className={'text-2xl font-black ' + (lake.depthScore > 0 ? 'text-green-500' : lake.depthScore < 0 ? 'text-red-500' : 'text-yellow-500')}>
-                                              {lake.depthScore > 0 ? '+' : ''}{lake.depthScore}
-                                            </div>
-                                          </div>
-                                          <div className="bg-slate-50 rounded-lg p-3 text-center">
-                                            <div className="text-xs text-slate-600 mb-1">Littoral</div>
-                                            <div className={'text-2xl font-black ' + (lake.littoralScore > 0 ? 'text-green-500' : lake.littoralScore < 0 ? 'text-red-500' : 'text-yellow-500')}>
-                                              {lake.littoralScore > 0 ? '+' : ''}{lake.littoralScore}
                                             </div>
                                           </div>
                                           <div className="bg-slate-50 rounded-lg p-3 text-center">
