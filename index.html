@@ -23,7 +23,7 @@
 
         function CabinScorer() {
           const criteria = [
-            "Lake Score", "Distance from Home", "Frontage", "Beach", "Lake Bottom",
+            "Lake Score", "Distance from Home", "Resort on Lake", "Frontage", "Beach", "Lake Bottom",
             "Swimming Depth", "Dock Condition", "Dock/Lift Included", "Backyard Slope",
             "Cabin Condition", "Bedrooms", "Bathrooms", "Kitchen", "Living Area", "Loft",
             "Fireplace", "Seasonal/Year Round", "Washer and Dryer", "Garage", "Outdoor Storage", "Backlot", "Lot size",
@@ -37,6 +37,7 @@
 
           const guidelines = {
             "Distance from Home": "60 Mins +1, Under 60 Mins +2", "Lake Score": "Enter sum from calculator",
+            "Resort on Lake": "No Resort +2, Resort -2",
             "Frontage": "50' = 0, 75' = +1, 100' = +2", "Beach": "Sand +2", "Lake Bottom": "Hard +2",
             "Swimming Depth": "3' at Dock +1, Deeper +2", "Dock/Lift Included": " Dock +1, Lift +2", 
             "Backyard Slope": "Moderate +1, Gentle +2",
@@ -298,6 +299,7 @@
               watershedAcres: watershedAcres,
               health: health,
               tp: tp,
+              meanDepth: meanDepth,
               watershedRatio: watershedRatio,
               littoralPercentage: littoralPercentage,
               watershedScore: watershedScore,
@@ -312,6 +314,7 @@
             setWatershedAcres('');
             setHealth('');
             setTp('');
+            setMeanDepth('');
             alert('Lake saved!');
           };
 
@@ -710,6 +713,17 @@
                           className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
                         />
                       </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Mean Depth (ft)</label>
+                        <input
+                          type="number"
+                          value={meanDepth}
+                          onChange={(e) => setMeanDepth(e.target.value)}
+                          placeholder="Enter mean depth in feet"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -870,6 +884,10 @@
                                           <div>
                                             <span className="text-sm text-slate-600">TP:</span>
                                             <span className="ml-2 font-semibold">{lake.tp || '---'}</span>
+                                          </div>
+                                          <div>
+                                            <span className="text-sm text-slate-600">Mean Depth:</span>
+                                            <span className="ml-2 font-semibold">{lake.meanDepth ? lake.meanDepth + ' ft' : '---'}</span>
                                           </div>
                                         </div>
 
