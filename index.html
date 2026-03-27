@@ -623,7 +623,7 @@
                 </div>
 
                 <div className="mt-12 border-t-4 border-slate-300 pt-12">
-                  <h2 className="text-3xl font-black text-slate-800 text-center mb-6">Watershed Calculator</h2>
+                  <h2 className="text-3xl font-black text-slate-800 text-center mb-6">Lake Calculator</h2>
                   
                   <div className="flex gap-4 mb-6">
                     <button 
@@ -671,28 +671,6 @@
                     
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Lake Acres</label>
-                        <input
-                          type="number"
-                          value={wsAcres}
-                          onChange={(e) => setWsAcres(e.target.value)}
-                          placeholder="Enter lake acres"
-                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Watershed Acres</label>
-                        <input
-                          type="number"
-                          value={watershedAcres}
-                          onChange={(e) => setWatershedAcres(e.target.value)}
-                          placeholder="Enter watershed acres"
-                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
-                        />
-                      </div>
-
-                      <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-2">Health (Grade)</label>
                         <input
                           type="text"
@@ -710,6 +688,28 @@
                           value={tp}
                           onChange={(e) => setTp(e.target.value)}
                           placeholder="5-30"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Lake Acres</label>
+                        <input
+                          type="number"
+                          value={wsAcres}
+                          onChange={(e) => setWsAcres(e.target.value)}
+                          placeholder="Enter lake acres"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Watershed Acres</label>
+                        <input
+                          type="number"
+                          value={watershedAcres}
+                          onChange={(e) => setWatershedAcres(e.target.value)}
+                          placeholder="Enter watershed acres"
                           className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
                         />
                       </div>
@@ -817,7 +817,7 @@
                               onClick={() => setLakeSortBy(lakeSortBy === 'alpha' ? 'score' : 'alpha')}
                               className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
                             >
-                              {lakeSortBy === 'alpha' ? 'Alphabetical' : 'Watershed Score'}
+                              {lakeSortBy === 'alpha' ? 'Alphabetical' : 'Overall Score'}
                               <i data-lucide="chevron-down" className={'w-4 h-4 transition-transform ' + (lakeSortBy === 'score' ? 'rotate-180' : '')}></i>
                             </button>
                           </div>
