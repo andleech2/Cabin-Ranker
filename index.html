@@ -64,7 +64,7 @@
           const [watershedView, setWatershedView] = useState('saved');
           const [lakeName, setLakeName] = useState('');
           const [expandedLakes, setExpandedLakes] = useState(new Set());
-          const [lakeSortBy, setLakeSortBy] = useState('alpha');
+          const [lakeSortBy, setLakeSortBy] = useState('score');
           const [editingLakeName, setEditingLakeName] = useState(null);
           const [editingLakeNotes, setEditingLakeNotes] = useState(null);
           const [health, setHealth] = useState('');
@@ -449,7 +449,7 @@
                   <div className="mb-8 bg-gradient-to-br from-teal-600 to-blue-600 rounded-2xl shadow-2xl p-8 text-white">
                     <h2 className="text-xl mb-6 flex items-center gap-3">
                       <span className="text-4xl">🏡</span>
-                      62 Points Max Score 
+                      76 Points Max Score 
                     </h2>
                     <div className="grid gap-4">
                       {cabins.map((cabin) => {
@@ -947,11 +947,10 @@
                                               {[
                                                 { label: 'Health (Grade)', key: 'health', placeholder: 'C, C+, B-, B, B+', type: 'text' },
                                                 { label: 'TP (Total Phosphorus)', key: 'tp', placeholder: '5-30', type: 'number' },
-                                                { label: 'Overall Appeal', key: 'appeal', placeholder: 'A, B, C, D, F', type: 'text' },
                                                 { label: 'Lake Acres', key: 'acres', placeholder: 'Lake acres', type: 'number' },
                                                 { label: 'Watershed Acres', key: 'watershedAcres', placeholder: 'Watershed acres', type: 'number' },
-                                                { label: 'Littoral Acres', key: 'littoralAcres', placeholder: 'Littoral acres', type: 'number' },
                                                 { label: 'Mean Depth (ft)', key: 'meanDepth', placeholder: 'Mean depth in feet', type: 'number' },
+                                                { label: 'Overall Appeal', key: 'appeal', placeholder: 'A, B, C, D, F', type: 'text' },
                                               ].map(({ label, key, placeholder, type }) => (
                                                 <div key={key}>
                                                   <label className="block text-xs font-semibold text-slate-600 mb-1">{label}</label>
