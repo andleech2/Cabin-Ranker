@@ -69,6 +69,9 @@
           const [editingLakeNotes, setEditingLakeNotes] = useState(null);
           const [health, setHealth] = useState('');
           const [tp, setTp] = useState('');
+          const [appeal, setAppeal] = useState('');
+          const [editingLakeDataId, setEditingLakeDataId] = useState(null);
+          const [lakeEditDraft, setLakeEditDraft] = useState({});
 
           useEffect(() => {
             const saved = localStorage.getItem('cabinData');
@@ -252,15 +255,27 @@
             return -2;
           };
 
+          const scoreAppeal = (grade) => {
+            if (!grade) return null;
+            const g = grade.toUpperCase().trim();
+            if (g === 'A') return 2;
+            if (g === 'B') return 1;
+            if (g === 'C') return 0;
+            if (g === 'D') return -1;
+            if (g === 'F') return -2;
+            return null;
+          };
+
           const watershedRatio = calculateWatershedRatio();
           const littoralPercentage = calculateLittoralPercentage();
           
           const watershedScore = scoreWatershedRatio(watershedRatio);
           const healthScore = scoreHealth(health);
           const tpScore = scoreTp(tp);
+          const appealScore = scoreAppeal(appeal);
 
           const calculateWatershedAverage = () => {
-            const scores = [watershedScore, healthScore, tpScore].filter(s => s !== null);
+            const scores = [watershedScore, healthScore, tpScore, appealScore].filter(s => s !== null);
             if (scores.length === 0) return null;
             const sum = scores.reduce((a, b) => a + b, 0);
             return sum;
@@ -297,14 +312,17 @@
               name: lakeName,
               acres: wsAcres,
               watershedAcres: watershedAcres,
+              littoralAcres: wsLittoralAcres,
               health: health,
               tp: tp,
               meanDepth: meanDepth,
+              appeal: appeal,
               watershedRatio: watershedRatio,
               littoralPercentage: littoralPercentage,
               watershedScore: watershedScore,
               healthScore: healthScore,
               tpScore: tpScore,
+              appealScore: appealScore,
               averageScore: averageScore,
               notes: ''
             };
@@ -315,6 +333,7 @@
             setHealth('');
             setTp('');
             setMeanDepth('');
+            setAppeal('');
             alert('Lake saved!');
           };
 
@@ -322,6 +341,41 @@
             if (window.confirm('Delete this lake?')) {
               setSavedLakes(savedLakes.filter(l => l.id !== id));
             }
+          };
+
+          const updateLakeData = (id, draft) => {
+            const newAcres = draft.acres;
+            const newWatershedAcres = draft.watershedAcres;
+            const newLittoralAcres = draft.littoralAcres;
+            const newWatershedRatio = (newAcres && newWatershedAcres && newAcres !== '0')
+              ? parseFloat(newWatershedAcres) / parseFloat(newAcres) : null;
+            const newLittoralPct = (newAcres && newLittoralAcres && newAcres !== '0')
+              ? (parseFloat(newLittoralAcres) / parseFloat(newAcres)) * 100 : null;
+            const newWatershedScore = scoreWatershedRatio(newWatershedRatio);
+            const newHealthScore = scoreHealth(draft.health);
+            const newTpScore = scoreTp(draft.tp);
+            const newAppealScore = scoreAppeal(draft.appeal);
+            const allScores = [newWatershedScore, newHealthScore, newTpScore, newAppealScore].filter(s => s !== null);
+            const newAvgScore = allScores.length ? allScores.reduce((a, b) => a + b, 0) : null;
+            setSavedLakes(savedLakes.map(l => l.id === id ? {
+              ...l,
+              health: draft.health,
+              tp: draft.tp,
+              acres: newAcres,
+              watershedAcres: newWatershedAcres,
+              littoralAcres: newLittoralAcres,
+              meanDepth: draft.meanDepth,
+              appeal: draft.appeal,
+              watershedRatio: newWatershedRatio,
+              littoralPercentage: newLittoralPct !== null ? newLittoralPct : l.littoralPercentage,
+              watershedScore: newWatershedScore,
+              healthScore: newHealthScore,
+              tpScore: newTpScore,
+              appealScore: newAppealScore,
+              averageScore: newAvgScore,
+            } : l));
+            setEditingLakeDataId(null);
+            setLakeEditDraft({});
           };
 
           const updateLakeName = (id, newName) => {
@@ -724,6 +778,17 @@
                           className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
                         />
                       </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Overall Appeal (Shape, Vicinity, Resorts)</label>
+                        <input
+                          type="text"
+                          value={appeal}
+                          onChange={(e) => setAppeal(e.target.value)}
+                          placeholder="A, B, C, D, F"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -775,6 +840,13 @@
                           {tpScore !== null ? (tpScore > 0 ? '+' : '') + tpScore : '---'}
                         </span>
                       </div>
+
+                      <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                        <span className="font-semibold text-slate-700">Overall Appeal</span>
+                        <span className={`text-3xl font-black ${getWatershedScoreColor(appealScore)}`}>
+                          {appealScore !== null ? (appealScore > 0 ? '+' : '') + appealScore : '---'}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -784,6 +856,7 @@
                       <div><strong>Watershed Ratio:</strong> &lt;5:1 (+2) | 5-10:1 (+1) | 10-15:1 (0) | 15-25:1 (-1) | 25+:1 (-2)</div>
                       <div><strong>Health:</strong> B+ (+2) | B (+1) | B- (0) | C+ (-1) | C (-2)</div>
                       <div><strong>TP:</strong> 5-15 (+2) | 15-25 (0) | 25+ (-2)</div>
+                      <div><strong>Overall Appeal:</strong> A (+2) | B (+1) | C (0) | D (-1) | F (-2)</div>
                     </div>
                   </div>
                     </>
@@ -867,29 +940,86 @@
                                       </div>
 
                                       <div className="pt-4 border-t border-slate-200">
-                                        <h4 className="font-bold text-slate-700 mb-3">Input Data</h4>
-                                        <div className="grid grid-cols-2 gap-4 mb-4">
+                                        {editingLakeDataId === lake.id ? (
                                           <div>
-                                            <span className="text-sm text-slate-600">Lake Acres:</span>
-                                            <span className="ml-2 font-semibold">{lake.acres}</span>
+                                            <h4 className="font-bold text-slate-700 mb-3">Edit Lake Data</h4>
+                                            <div className="space-y-3 mb-4">
+                                              {[
+                                                { label: 'Health (Grade)', key: 'health', placeholder: 'C, C+, B-, B, B+', type: 'text' },
+                                                { label: 'TP (Total Phosphorus)', key: 'tp', placeholder: '5-30', type: 'number' },
+                                                { label: 'Overall Appeal', key: 'appeal', placeholder: 'A, B, C, D, F', type: 'text' },
+                                                { label: 'Lake Acres', key: 'acres', placeholder: 'Lake acres', type: 'number' },
+                                                { label: 'Watershed Acres', key: 'watershedAcres', placeholder: 'Watershed acres', type: 'number' },
+                                                { label: 'Littoral Acres', key: 'littoralAcres', placeholder: 'Littoral acres', type: 'number' },
+                                                { label: 'Mean Depth (ft)', key: 'meanDepth', placeholder: 'Mean depth in feet', type: 'number' },
+                                              ].map(({ label, key, placeholder, type }) => (
+                                                <div key={key}>
+                                                  <label className="block text-xs font-semibold text-slate-600 mb-1">{label}</label>
+                                                  <input
+                                                    type={type}
+                                                    value={lakeEditDraft[key] || ''}
+                                                    onChange={(e) => setLakeEditDraft({ ...lakeEditDraft, [key]: e.target.value })}
+                                                    placeholder={placeholder}
+                                                    className="w-full px-3 py-2 border-2 border-blue-400 rounded-lg text-sm focus:outline-none focus:border-blue-600"
+                                                  />
+                                                </div>
+                                              ))}
+                                            </div>
+                                            <div className="flex gap-2">
+                                              <button
+                                                onClick={() => updateLakeData(lake.id, lakeEditDraft)}
+                                                className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm"
+                                              >
+                                                Save Changes
+                                              </button>
+                                              <button
+                                                onClick={() => { setEditingLakeDataId(null); setLakeEditDraft({}); }}
+                                                className="flex-1 py-2 bg-slate-400 hover:bg-slate-500 text-white rounded-lg font-bold text-sm"
+                                              >
+                                                Cancel
+                                              </button>
+                                            </div>
                                           </div>
+                                        ) : (
                                           <div>
-                                            <span className="text-sm text-slate-600">Watershed Acres:</span>
-                                            <span className="ml-2 font-semibold">{lake.watershedAcres}</span>
+                                            <div className="flex items-center justify-between mb-3">
+                                              <h4 className="font-bold text-slate-700">Input Data</h4>
+                                              <button
+                                                onClick={(e) => { e.stopPropagation(); setEditingLakeDataId(lake.id); setLakeEditDraft({ health: lake.health || '', tp: lake.tp || '', appeal: lake.appeal || '', acres: lake.acres || '', watershedAcres: lake.watershedAcres || '', littoralAcres: lake.littoralAcres || '', meanDepth: lake.meanDepth || '' }); }}
+                                                className="text-xs px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-semibold flex items-center gap-1"
+                                              >
+                                                <i data-lucide="edit-2" className="w-3 h-3"></i>
+                                                Edit Data
+                                              </button>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                              <div>
+                                                <span className="text-sm text-slate-600">Lake Acres:</span>
+                                                <span className="ml-2 font-semibold">{lake.acres}</span>
+                                              </div>
+                                              <div>
+                                                <span className="text-sm text-slate-600">Watershed Acres:</span>
+                                                <span className="ml-2 font-semibold">{lake.watershedAcres}</span>
+                                              </div>
+                                              <div>
+                                                <span className="text-sm text-slate-600">Health:</span>
+                                                <span className="ml-2 font-semibold">{lake.health || '---'}</span>
+                                              </div>
+                                              <div>
+                                                <span className="text-sm text-slate-600">TP:</span>
+                                                <span className="ml-2 font-semibold">{lake.tp || '---'}</span>
+                                              </div>
+                                              <div>
+                                                <span className="text-sm text-slate-600">Mean Depth:</span>
+                                                <span className="ml-2 font-semibold">{lake.meanDepth ? lake.meanDepth + ' ft' : '---'}</span>
+                                              </div>
+                                              <div>
+                                                <span className="text-sm text-slate-600">Overall Appeal:</span>
+                                                <span className="ml-2 font-semibold">{lake.appeal || '---'}</span>
+                                              </div>
+                                            </div>
                                           </div>
-                                          <div>
-                                            <span className="text-sm text-slate-600">Health:</span>
-                                            <span className="ml-2 font-semibold">{lake.health || '---'}</span>
-                                          </div>
-                                          <div>
-                                            <span className="text-sm text-slate-600">TP:</span>
-                                            <span className="ml-2 font-semibold">{lake.tp || '---'}</span>
-                                          </div>
-                                          <div>
-                                            <span className="text-sm text-slate-600">Mean Depth:</span>
-                                            <span className="ml-2 font-semibold">{lake.meanDepth ? lake.meanDepth + ' ft' : '---'}</span>
-                                          </div>
-                                        </div>
+                                        )}
 
                                         <h4 className="font-bold text-slate-700 mb-3 mt-4">Calculated Values</h4>
                                         <div className="grid grid-cols-2 gap-4 mb-4">
@@ -904,7 +1034,7 @@
                                         </div>
 
                                         <h4 className="font-bold text-slate-700 mb-3 mt-4">Individual Scores</h4>
-                                        <div className="grid grid-cols-3 gap-3 mb-4">
+                                        <div className="grid grid-cols-2 gap-3 mb-4">
                                           <div className="bg-slate-50 rounded-lg p-3 text-center">
                                             <div className="text-xs text-slate-600 mb-1">Watershed</div>
                                             <div className={'text-2xl font-black ' + (lake.watershedScore > 0 ? 'text-green-500' : lake.watershedScore < 0 ? 'text-red-500' : 'text-yellow-500')}>
@@ -921,6 +1051,12 @@
                                             <div className="text-xs text-slate-600 mb-1">TP</div>
                                             <div className={'text-2xl font-black ' + ((lake.tpScore || 0) > 0 ? 'text-green-500' : (lake.tpScore || 0) < 0 ? 'text-red-500' : 'text-yellow-500')}>
                                               {lake.tpScore !== null && lake.tpScore !== undefined ? ((lake.tpScore > 0 ? '+' : '') + lake.tpScore) : '---'}
+                                            </div>
+                                          </div>
+                                          <div className="bg-slate-50 rounded-lg p-3 text-center">
+                                            <div className="text-xs text-slate-600 mb-1">Overall Appeal</div>
+                                            <div className={'text-2xl font-black ' + ((lake.appealScore || 0) > 0 ? 'text-green-500' : (lake.appealScore || 0) < 0 ? 'text-red-500' : 'text-yellow-500')}>
+                                              {lake.appealScore !== null && lake.appealScore !== undefined ? ((lake.appealScore > 0 ? '+' : '') + lake.appealScore) : '---'}
                                             </div>
                                           </div>
                                         </div>
