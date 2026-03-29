@@ -781,6 +781,17 @@
                       </div>
 
                       <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Littoral Acres</label>
+                        <input
+                          type="number"
+                          value={wsLittoralAcres}
+                          onChange={(e) => setWsLittoralAcres(e.target.value)}
+                          placeholder="Enter littoral acres"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+
+                      <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-2">Mean Depth (ft)</label>
                         <input
                           type="number"
@@ -973,10 +984,11 @@
                                               {[
                                                 { label: 'Health (Grade)', key: 'health', placeholder: 'C, C+, B-, B, B+', type: 'text' },
                                                 { label: 'TP (Total Phosphorus)', key: 'tp', placeholder: '5-30', type: 'number' },
-                                                { label: 'TSI (Trophic State Index)', key: 'tsi', placeholder: '30-49', type: 'number' },
                                                 { label: 'Lake Acres', key: 'acres', placeholder: 'Lake acres', type: 'number' },
                                                 { label: 'Watershed Acres', key: 'watershedAcres', placeholder: 'Watershed acres', type: 'number' },
+                                                { label: 'Littoral Acres', key: 'littoralAcres', placeholder: 'Littoral acres', type: 'number' },
                                                 { label: 'Mean Depth (ft)', key: 'meanDepth', placeholder: 'Mean depth in feet', type: 'number' },
+                                                { label: 'TSI (Trophic State Index)', key: 'tsi', placeholder: '30-49', type: 'number' },
                                                 { label: 'Overall Appeal', key: 'appeal', placeholder: 'A, B, C, D, F', type: 'text' },
                                               ].map(({ label, key, placeholder, type }) => (
                                                 <div key={key}>
@@ -1059,10 +1071,6 @@
                                           <div>
                                             <span className="text-sm text-slate-600">Watershed Ratio:</span>
                                             <span className="ml-2 font-semibold">{lake.watershedRatio !== null ? lake.watershedRatio.toFixed(1) + ':1' : '---'}</span>
-                                          </div>
-                                          <div>
-                                            <span className="text-sm text-slate-600">Littoral %:</span>
-                                            <span className="ml-2 font-semibold">{lake.littoralPercentage !== null ? lake.littoralPercentage.toFixed(1) + '%' : '---'}</span>
                                           </div>
                                         </div>
 
