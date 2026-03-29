@@ -22,31 +22,68 @@
         const { useState, useEffect } = React;
 
         function CabinScorer() {
-          const criteria = [
-            "Lake Score", "Distance from Home", "Resort on Lake", "Frontage", "Beach", "Lake Bottom",
-            "Swimming Depth", "Dock Condition", "Dock/Lift Included", "Backyard Slope",
-            "Cabin Condition", "Bedrooms", "Bathrooms", "Kitchen", "Living Area", "Loft",
-            "Fireplace", "Seasonal/Year Round", "Washer and Dryer", "Garage", "Outdoor Storage", "Backlot", "Lot size",
-            "Lot side of Lake", "Included Furnishings/Toys"
+          const fields = [
+            { key: 'LS',   label: 'Lake Score',         type: 'number', weight: 2 },
+            { key: 'ROL',  label: 'Resort on Lake',     type: 'select', weight: 1,
+              options: [{label:'Yes', value:'yes', score:-2}, {label:'No', value:'no', score:2}] },
+            { key: 'F',    label: 'Frontage',           type: 'feet',   weight: 1 },
+            { key: 'B',    label: 'Beach',              type: 'select', weight: 2,
+              options: [{label:'Sand', value:'sand', score:2}, {label:'Grass/Rock', value:'grass', score:0}, {label:'Weeds', value:'weeds', score:-1}] },
+            { key: 'LB',   label: 'Lake Bottom',        type: 'select', weight: 1,
+              options: [{label:'Hard', value:'hard', score:2}, {label:'Soft', value:'soft', score:-2}] },
+            { key: 'SD',   label: 'Swimming Depth',     type: 'select', weight: 2,
+              options: [{label:'4ft+', value:'4', score:2}, {label:'3ft', value:'3', score:0}, {label:'2ft', value:'2', score:-2}] },
+            { key: 'DC',   label: 'Dock Condition',     type: 'grade',  weight: 1 },
+            { key: 'DL',   label: 'Dock/Lift Included', type: 'count',  weight: 1 },
+            { key: 'BS',   label: 'Backyard Slope',     type: 'select', weight: 1,
+              options: [{label:'Flat/Gentle', value:'flat', score:2}, {label:'Moderate', value:'moderate', score:1}, {label:'Steep', value:'steep', score:0}, {label:'Stairs', value:'stairs', score:-1}] },
+            { key: 'CC',   label: 'Cabin Condition',    type: 'grade',  weight: 2 },
+            { key: 'Bdrm', label: 'Bedrooms',           type: 'select', weight: 1,
+              options: [{label:'3+', value:'3', score:2}, {label:'2', value:'2', score:0}] },
+            { key: 'Bthrm',label: 'Bathrooms',          type: 'select', weight: 1,
+              options: [{label:'2+', value:'2', score:2}, {label:'1', value:'1', score:0}] },
+            { key: 'K',    label: 'Kitchen',            type: 'grade',  weight: 1 },
+            { key: 'LA',   label: 'Living Area',        type: 'grade',  weight: 1 },
+            { key: 'Loft', label: 'Loft/Upstairs',      type: 'select', weight: 1,
+              options: [{label:'Yes', value:'yes', score:2}, {label:'No', value:'no', score:0}] },
+            { key: 'FP',   label: 'Fireplace',          type: 'select', weight: 1,
+              options: [{label:'Yes', value:'yes', score:2}, {label:'No', value:'no', score:0}] },
+            { key: 'SYr',  label: 'Seasonal/Year Round',type: 'select', weight: 1,
+              options: [{label:'Year Round', value:'yr', score:2}, {label:'Seasonal', value:'seasonal', score:-2}] },
+            { key: 'WD',   label: 'Washer/Dryer',       type: 'select', weight: 1,
+              options: [{label:'Yes', value:'yes', score:2}, {label:'No', value:'no', score:0}] },
+            { key: 'G',    label: 'Garage',             type: 'count',  weight: 2 },
+            { key: 'OS',   label: 'Outdoor Storage',    type: 'count',  weight: 1 },
+            { key: 'BLot', label: 'Backlot',            type: 'select', weight: 2,
+              options: [{label:'Yes', value:'yes', score:2}, {label:'No', value:'no', score:0}] },
+            { key: 'SOL',  label: 'Side of Lake',       type: 'select', weight: 1,
+              options: [{label:'E', value:'e', score:2}, {label:'N/W', value:'nw', score:1}, {label:'S', value:'s', score:0}] },
+            { key: 'IFT',  label: 'Incl Furn/Toys',     type: 'grade',  weight: 1 },
           ];
 
-          const weights = {
-            "Distance from Home": 2, "Lake Score": 2, "Beach": 2, "Swimming Depth": 2,
-            "Cabin Condition": 2, "Garage": 2, "Backlot": 2
-          };
+          const maxScore = fields.filter(f => f.type !== 'number').reduce((sum, f) => sum + 2 * f.weight, 0);
 
-          const guidelines = {
-            "Distance from Home": "60 Mins +1, Under 60 Mins +2", "Lake Score": "Enter sum from calculator",
-            "Resort on Lake": "No Resort +2, Resort -2",
-            "Frontage": "50' = 0, 75' = +1, 100' = +2", "Beach": "Sand +2", "Lake Bottom": "Hard +2",
-            "Swimming Depth": "3' at Dock +1, Deeper +2", "Dock/Lift Included": " Dock +1, Lift +2", 
-            "Backyard Slope": "Moderate +1, Gentle +2",
-            "Cabin Condition": "Needs Little, +1, Needs Nothing +2", "Bedrooms": "Two +1",
-            "Bathrooms": "One +1", "Kitchen": "Overall Condition", "Living Area": "Overall Condition", "Loft": "+2 if Yes, 0 if No",
-            "Fireplace": "+2 if Yes, 0 if No", "Seasonal/Year Round": "Seasonal 0, Year Round +2",
-            "Washer and Dryer": "+2 if Yes, 0 if No",
-            "Garage": "Number of Stalls", "Outdoor Storage": "Number of Sheds", "Backlot": "+2 if Yes, 0 if No", 
-            "Lot side of Lake": "South +0, North/West +1, East +2"
+          const scoreField = (field, value) => {
+            if (value === '' || value === null || value === undefined) return 0;
+            if (field.type === 'number') return parseInt(value) || 0;
+            if (field.type === 'grade') {
+              const g = String(value).toUpperCase().trim();
+              return g === 'A' ? 2 : g === 'B' ? 1 : g === 'C' ? 0 : g === 'D' ? -1 : g === 'F' ? -2 : 0;
+            }
+            if (field.type === 'count') return Math.min(parseInt(value) || 0, 2);
+            if (field.type === 'feet') {
+              const n = parseFloat(value);
+              if (isNaN(n)) return 0;
+              if (n < 40) return -2;
+              if (n < 75) return 0;
+              if (n < 90) return 1;
+              return 2;
+            }
+            if (field.type === 'select') {
+              const opt = field.options.find(o => o.value === value);
+              return opt ? opt.score : 0;
+            }
+            return 0;
           };
 
           const [cabins, setCabins] = useState([]);
@@ -74,7 +111,13 @@
           const [lakeEditDraft, setLakeEditDraft] = useState({});
           const [tsi, setTsi] = useState('');
           const [shorelineMiles, setShorelineMiles] = useState('');
-          const [editingLakeUrl, setEditingLakeUrl] = useState(null); // { id, field }
+          const [editingLakeUrl, setEditingLakeUrl] = useState(null);
+          const [activeTab, setActiveTab] = useState(() => localStorage.getItem('activeTab') || 'lakes');
+
+          const switchTab = (tab) => {
+            setActiveTab(tab);
+            localStorage.setItem('activeTab', tab);
+          }; // { id, field }
 
           useEffect(() => {
             const saved = localStorage.getItem('cabinData');
@@ -82,20 +125,14 @@
               try {
                 const data = JSON.parse(saved);
                 if (data.cabins) {
-                  const updated = data.cabins.map(cabin => {
-                    const scores = {};
-                    criteria.forEach(c => { 
-                      scores[c] = cabin.scores && cabin.scores[c] !== undefined ? cabin.scores[c] : 0; 
-                    });
-                    return { 
-                      id: cabin.id, 
-                      name: cabin.name, 
-                      number: cabin.number || '', 
-                      price: cabin.price || '',
-                      url: cabin.url || '',
-                      scores: scores 
-                    };
-                  });
+                  const updated = data.cabins.map(cabin => ({
+                    id: cabin.id,
+                    name: cabin.name,
+                    number: cabin.number || '',
+                    price: cabin.price || '',
+                    url: cabin.url || '',
+                    inputs: cabin.inputs || {}
+                  }));
                   setCabins(updated);
                 }
               } catch (e) {}
@@ -126,15 +163,13 @@
           }, [cabins, expanded, expandedLakes, lakeSortBy, watershedView, editingLakeName, editingLakeNotes]);
 
           const addCabin = () => {
-            const scores = {};
-            criteria.forEach(c => { scores[c] = 0; });
             setCabins([{ 
               id: Date.now(), 
               name: 'Address', 
               number: '', 
               price: '',
               url: '',
-              scores 
+              inputs: {}
             }, ...cabins]);
           };
 
@@ -147,27 +182,17 @@
           const updatePrice = (id, price) => setCabins(cabins.map(c => c.id === id ? { ...c, price } : c));
           const updateUrl = (id, url) => setCabins(cabins.map(c => c.id === id ? { ...c, url } : c));
 
-          const updateScore = (cabinId, criterion, score) => {
-            setCabins(cabins.map(c => c.id === cabinId ? { ...c, scores: { ...c.scores, [criterion]: score } } : c));
+          const updateInput = (cabinId, key, value) => {
+            setCabins(cabins.map(c => c.id === cabinId ? { ...c, inputs: { ...c.inputs, [key]: value } } : c));
           };
 
           const calculateTotal = (cabin) => {
-            let total = 0;
-            for (const c in cabin.scores) {
-              total += cabin.scores[c] * (weights[c] || 1);
-            }
-            return total;
-          };
-
-          const getScoreColor = (score) => {
-            const map = { 
-              '-2': 'bg-red-500 hover:bg-red-600', 
-              '-1': 'bg-red-300 hover:bg-red-400', 
-              '0': 'bg-yellow-400 hover:bg-yellow-500', 
-              '1': 'bg-green-300 hover:bg-green-400', 
-              '2': 'bg-green-500 hover:bg-green-600' 
-            };
-            return map[score] || 'bg-yellow-400 hover:bg-yellow-500';
+            const fieldTotal = fields.reduce((sum, field) => {
+              const val = cabin.inputs ? (cabin.inputs[field.key] !== undefined ? cabin.inputs[field.key] : '') : '';
+              return sum + scoreField(field, val) * field.weight;
+            }, 0);
+            const bonus = parseInt(cabin.inputs && cabin.inputs['bonus'] || 0) || 0;
+            return fieldTotal + bonus;
           };
 
           const toggleExpanded = (id) => {
@@ -195,20 +220,14 @@
                 try {
                   const data = JSON.parse(ev.target.result);
                   if (data.cabins) {
-                    const updated = data.cabins.map(cabin => {
-                      const scores = {};
-                      criteria.forEach(c => { 
-                        scores[c] = cabin.scores && cabin.scores[c] !== undefined ? cabin.scores[c] : 0; 
-                      });
-                      return { 
-                        id: cabin.id, 
-                        name: cabin.name, 
-                        number: cabin.number || '', 
-                        price: cabin.price || '',
-                        url: cabin.url || '',
-                        scores 
-                      };
-                    });
+                    const updated = data.cabins.map(cabin => ({
+                      id: cabin.id,
+                      name: cabin.name,
+                      number: cabin.number || '',
+                      price: cabin.price || '',
+                      url: cabin.url || '',
+                      inputs: cabin.inputs || {}
+                    }));
                     setCabins(updated);
                     alert('Imported ' + updated.length + ' cabins');
                   }
@@ -419,9 +438,15 @@
             setExpandedLakes(newExp);
           };
 
-          const sortedLakes = lakeSortBy === 'alpha' 
-            ? [...savedLakes].sort((a, b) => a.name.localeCompare(b.name))
-            : [...savedLakes].sort((a, b) => b.averageScore - a.averageScore);
+          const sortedLakes = (() => {
+            const arr = [...savedLakes];
+            if (lakeSortBy === 'acres') return arr.sort((a, b) => parseFloat(b.acres || 0) - parseFloat(a.acres || 0));
+            if (lakeSortBy === 'health') return arr.sort((a, b) => (b.healthScore ?? -99) - (a.healthScore ?? -99));
+            if (lakeSortBy === 'tsi') return arr.sort((a, b) => parseFloat(a.tsi || 999) - parseFloat(b.tsi || 999));
+            if (lakeSortBy === 'tp') return arr.sort((a, b) => parseFloat(a.tp || 999) - parseFloat(b.tp || 999));
+            if (lakeSortBy === 'shoreline') return arr.sort((a, b) => parseFloat(b.shorelineMiles || 0) - parseFloat(a.shorelineMiles || 0));
+            return arr.sort((a, b) => b.averageScore - a.averageScore); // default: score
+          })();
 
           const exportLakes = () => {
             const blob = new Blob([JSON.stringify(savedLakes, null, 2)], { type: 'application/json' });
@@ -456,8 +481,25 @@
             <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-8">
               <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-6">
-                  <h1 className="text-4xl font-black text-slate-800">Cabin Scorer</h1>
+                  <h1 className="text-4xl font-black text-slate-800 mb-4">Cabin Scorer</h1>
+                  <div className="inline-flex items-center bg-white rounded-full shadow-md border border-slate-200 p-1">
+                    <button
+                      onClick={() => switchTab('cabins')}
+                      className={'px-6 py-2 rounded-full font-bold text-sm transition-all ' + (activeTab === 'cabins' ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-700')}
+                    >
+                      🏡 Cabins ({cabins.length})
+                    </button>
+                    <button
+                      onClick={() => switchTab('lakes')}
+                      className={'px-6 py-2 rounded-full font-bold text-sm transition-all ' + (activeTab === 'lakes' ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-700')}
+                    >
+                      🌊 Lakes ({savedLakes.length})
+                    </button>
+                  </div>
                 </div>
+
+                {activeTab === 'cabins' && (
+                <div>
 
                 <button onClick={addCabin} className="w-full mb-6 py-4 bg-gradient-to-r from-teal-600 to-blue-600 text-white rounded-xl hover:from-teal-700 hover:to-blue-700 shadow-lg flex items-center justify-center gap-3 text-lg font-bold">
                   <i data-lucide="plus" className="w-6 h-6"></i>
@@ -473,7 +515,7 @@
                   <div className="mb-8 bg-gradient-to-br from-teal-600 to-blue-600 rounded-2xl shadow-2xl p-8 text-white">
                     <h2 className="text-xl mb-6 flex items-center gap-3">
                       <span className="text-4xl">🏡</span>
-                      76 Points Max Score 
+                      {maxScore} pts max + Lake Score
                     </h2>
                     <div className="grid gap-4">
                       {cabins.map((cabin) => {
@@ -605,40 +647,57 @@
 
                             {isExpanded && (
                               <div className="px-6 pb-6 border-t border-white/20 pt-6">
-                                <div className="space-y-3">
-                                  {criteria.map((criterion, idx) => {
-                                    const weight = weights[criterion] || 1;
-                                    const rawScore = cabin.scores[criterion] || 0;
-                                    const weighted = rawScore * weight;
+                                <div className="space-y-2">
+                                  {fields.map((field) => {
+                                    const val = cabin.inputs ? (cabin.inputs[field.key] !== undefined ? cabin.inputs[field.key] : '') : '';
+                                    const score = scoreField(field, val);
+                                    const weighted = score * field.weight;
                                     return (
-                                      <div key={idx} className="bg-white/10 rounded-xl p-4">
+                                      <div key={field.key} className="bg-white/10 rounded-xl p-3">
                                         <div className="flex items-center justify-between mb-2">
-                                          <div className="flex-1">
-                                            <span className="font-semibold text-white">
-                                              {criterion}
-                                              {weight > 1 && <span className="ml-2 text-xs bg-yellow-400 text-slate-800 px-2 py-0.5 rounded font-bold">2×</span>}
-                                            </span>
-                                            {guidelines[criterion] && <div className="text-xs italic text-white/60 mt-0.5">{guidelines[criterion]}</div>}
-                                          </div>
-                                          <span className="text-sm font-bold text-white/80">{weighted > 0 ? '+' : ''}{weighted}</span>
+                                          <span className="font-semibold text-white text-sm">
+                                            {field.label}
+                                            {field.weight > 1 && <span className="ml-2 text-xs bg-yellow-400 text-slate-800 px-1.5 py-0.5 rounded font-bold">2×</span>}
+                                          </span>
+                                          <span className={'text-sm font-bold ' + (weighted > 0 ? 'text-green-300' : weighted < 0 ? 'text-red-300' : 'text-white/50')}>
+                                            {weighted !== 0 ? (weighted > 0 ? '+' : '') + weighted : '—'}
+                                          </span>
                                         </div>
-                                        {criterion === "Lake Score" ? (
+                                        {(field.type === 'number' || field.type === 'feet' || field.type === 'count') && (
                                           <input
                                             type="number"
-                                            value={rawScore || ''}
-                                            onChange={(e) => updateScore(cabin.id, criterion, parseInt(e.target.value) || 0)}
-                                            placeholder="Enter lake score"
-                                            className="w-full px-4 py-3 border-2 border-white rounded-lg focus:outline-none focus:border-yellow-400 text-lg text-center font-bold"
+                                            value={val}
+                                            onChange={(e) => updateInput(cabin.id, field.key, e.target.value)}
+                                            placeholder={field.type === 'feet' ? 'Feet' : field.type === 'count' ? 'Count' : 'Score'}
+                                            className="w-full px-3 py-2 border-2 border-white/30 rounded-lg focus:outline-none focus:border-yellow-400 text-lg text-center font-bold bg-white/10 text-white placeholder-white/40"
                                           />
-                                        ) : (
-                                          <div className="flex gap-2">
-                                            {[-2, -1, 0, 1, 2].map(score => (
-                                              <button 
-                                                key={score} 
-                                                onClick={() => updateScore(cabin.id, criterion, score)} 
-                                                className={'flex-1 py-3 rounded-lg font-bold text-white shadow-md transition-all ' + getScoreColor(score) + ' ' + (rawScore === score ? 'ring-4 ring-white scale-105' : 'opacity-70 hover:opacity-100')}
+                                        )}
+                                        {field.type === 'grade' && (
+                                          <div className="flex gap-1">
+                                            {['A','B','C','D','F'].map(g => (
+                                              <button
+                                                key={g}
+                                                onClick={() => updateInput(cabin.id, field.key, val === g ? '' : g)}
+                                                className={'flex-1 py-2 rounded-lg font-bold text-sm transition-all ' + (val === g
+                                                  ? (g === 'A' ? 'bg-green-500 text-white ring-2 ring-white' : g === 'B' ? 'bg-green-300 text-slate-800 ring-2 ring-white' : g === 'C' ? 'bg-yellow-400 text-slate-800 ring-2 ring-white' : g === 'D' ? 'bg-red-300 text-white ring-2 ring-white' : 'bg-red-500 text-white ring-2 ring-white')
+                                                  : 'bg-white/20 text-white hover:bg-white/30')}
                                               >
-                                                {score > 0 ? '+' : ''}{score}
+                                                {g}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        )}
+                                        {field.type === 'select' && (
+                                          <div className="flex gap-1">
+                                            {field.options.map(opt => (
+                                              <button
+                                                key={opt.value}
+                                                onClick={() => updateInput(cabin.id, field.key, val === opt.value ? '' : opt.value)}
+                                                className={'flex-1 py-2 px-1 rounded-lg font-bold text-xs transition-all ' + (val === opt.value
+                                                  ? (opt.score > 0 ? 'bg-green-500 text-white ring-2 ring-white' : opt.score < 0 ? 'bg-red-500 text-white ring-2 ring-white' : 'bg-yellow-400 text-slate-800 ring-2 ring-white')
+                                                  : 'bg-white/20 text-white hover:bg-white/30')}
+                                              >
+                                                {opt.label}
                                               </button>
                                             ))}
                                           </div>
@@ -646,6 +705,32 @@
                                       </div>
                                     );
                                   })}
+                                  <div className="bg-white/10 rounded-xl p-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="font-semibold text-white text-sm">Bonus Points</span>
+                                      <span className={'text-sm font-bold ' + (parseInt(cabin.inputs && cabin.inputs['bonus'] || 0) > 0 ? 'text-green-300' : parseInt(cabin.inputs && cabin.inputs['bonus'] || 0) < 0 ? 'text-red-300' : 'text-white/50')}>
+                                        {parseInt(cabin.inputs && cabin.inputs['bonus'] || 0) > 0 ? '+' : ''}{cabin.inputs && cabin.inputs['bonus'] ? cabin.inputs['bonus'] : '—'}
+                                      </span>
+                                    </div>
+                                    <input
+                                      type="number"
+                                      value={cabin.inputs && cabin.inputs['bonus'] !== undefined ? cabin.inputs['bonus'] : ''}
+                                      onChange={(e) => updateInput(cabin.id, 'bonus', e.target.value)}
+                                      placeholder="e.g. +3 or -1"
+                                      className="w-full px-3 py-2 border-2 border-white/30 rounded-lg focus:outline-none focus:border-yellow-400 text-lg text-center font-bold bg-white/10 text-white placeholder-white/40"
+                                    />
+                                  </div>
+                                  <div className="bg-white/10 rounded-xl p-3">
+                                    <span className="font-semibold text-white text-sm block mb-2">Notes</span>
+                                    <textarea
+                                      value={cabin.inputs && cabin.inputs['notes'] !== undefined ? cabin.inputs['notes'] : ''}
+                                      onChange={(e) => updateInput(cabin.id, 'notes', e.target.value)}
+                                      onClick={(e) => e.stopPropagation()}
+                                      placeholder="Add notes about this cabin..."
+                                      rows={3}
+                                      className="w-full px-3 py-2 border-2 border-white/30 rounded-lg focus:outline-none focus:border-yellow-400 text-sm bg-white/10 text-white placeholder-white/40 resize-none"
+                                    />
+                                  </div>
                                 </div>
                               </div>
                             )}
@@ -687,11 +772,11 @@
                 <div className="mt-8 bg-white/80 rounded-2xl shadow-lg p-6 border border-teal-100">
                   <h3 className="text-xl font-bold text-slate-800 mb-4 text-center">Backup Cabin Data</h3>
                   <div className="flex gap-4 max-w-md mx-auto">
-                    <button onClick={exportData} className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold flex items-center justify-center gap-2">
+                    <button onClick={exportData} className="flex-1 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-bold flex items-center justify-center gap-2">
                       <i data-lucide="download" className="w-5 h-5"></i>
                       Export Data
                     </button>
-                    <label className="flex-1 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold flex items-center justify-center gap-2 cursor-pointer">
+                    <label className="flex-1 py-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-bold flex items-center justify-center gap-2 cursor-pointer">
                       <i data-lucide="upload" className="w-5 h-5"></i>
                       Import Data
                       <input type="file" accept=".json" onChange={importData} className="hidden" />
@@ -699,20 +784,24 @@
                   </div>
                   <p className="text-xs text-slate-600 text-center mt-3">Export to save a backup. Import to restore your cabins.</p>
                 </div>
+                </div>
+                )}
 
-                <div className="mt-12 border-t-4 border-slate-300 pt-12">
+                {activeTab === 'lakes' && (
+                <div>
+                <div className="border-slate-300">
                   <h2 className="text-3xl font-black text-slate-800 text-center mb-6">Lake Calculator</h2>
                   
                   <div className="flex gap-4 mb-6">
                     <button 
                       onClick={() => setWatershedView('saved')}
-                      className={'flex-1 py-3 rounded-lg font-bold transition-colors ' + (watershedView === 'saved' ? 'bg-blue-600 text-white' : 'bg-white text-slate-700 border-2 border-slate-300')}
+                      className={'flex-1 py-3 rounded-lg font-bold transition-colors ' + (watershedView === 'saved' ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow-lg' : 'bg-white text-slate-700 border-2 border-slate-300')}
                     >
                       Saved Lakes ({savedLakes.length})
                     </button>
                     <button 
                       onClick={() => setWatershedView('calculator')}
-                      className={'flex-1 py-3 rounded-lg font-bold transition-colors ' + (watershedView === 'calculator' ? 'bg-blue-600 text-white' : 'bg-white text-slate-700 border-2 border-slate-300')}
+                      className={'flex-1 py-3 rounded-lg font-bold transition-colors ' + (watershedView === 'calculator' ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow-lg' : 'bg-white text-slate-700 border-2 border-slate-300')}
                     >
                       Calculator
                     </button>
@@ -925,11 +1014,11 @@
                       <div className="bg-white/80 rounded-2xl shadow-lg p-6 border border-teal-100 mb-6">
                         <h3 className="text-xl font-bold text-slate-800 mb-4 text-center">Backup Lake Data</h3>
                         <div className="flex gap-4">
-                          <button onClick={exportLakes} className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold flex items-center justify-center gap-2">
+                          <button onClick={exportLakes} className="flex-1 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-bold flex items-center justify-center gap-2">
                             <i data-lucide="download" className="w-5 h-5"></i>
                             Export Lakes
                           </button>
-                          <label className="flex-1 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold flex items-center justify-center gap-2 cursor-pointer">
+                          <label className="flex-1 py-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-bold flex items-center justify-center gap-2 cursor-pointer">
                             <i data-lucide="upload" className="w-5 h-5"></i>
                             Import Lakes
                             <input type="file" accept=".json" onChange={importLakes} className="hidden" />
@@ -946,13 +1035,18 @@
                         <>
                           <div className="flex items-center justify-between mb-4 bg-white rounded-lg p-3 border border-slate-200">
                             <span className="text-sm font-semibold text-slate-700">Sort by:</span>
-                            <button
-                              onClick={() => setLakeSortBy(lakeSortBy === 'alpha' ? 'score' : 'alpha')}
-                              className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                            <select
+                              value={lakeSortBy}
+                              onChange={(e) => setLakeSortBy(e.target.value)}
+                              className="text-sm font-semibold text-blue-600 border-none outline-none bg-transparent cursor-pointer"
                             >
-                              {lakeSortBy === 'alpha' ? 'Alphabetical' : 'Overall Score'}
-                              <i data-lucide="chevron-down" className={'w-4 h-4 transition-transform ' + (lakeSortBy === 'score' ? 'rotate-180' : '')}></i>
-                            </button>
+                              <option value="score">Overall Score</option>
+                              <option value="acres">Acres</option>
+                              <option value="health">Health</option>
+                              <option value="tsi">TSI</option>
+                              <option value="tp">TP</option>
+                              <option value="shoreline">Shoreline</option>
+                            </select>
                           </div>
 
                           <div className="space-y-4">
@@ -1204,6 +1298,8 @@
                     </div>
                   )}
                 </div>
+                </div>
+                )}
 
               </div>
             </div>
