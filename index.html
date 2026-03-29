@@ -481,7 +481,7 @@
             <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-8">
               <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-6">
-                  <h1 className="text-2xl font-black text-slate-800 mb-4 whitespace-nowrap">Lake Cabin Scorer</h1>
+                  <h1 className="text-3xl font-black text-slate-800 mb-4 whitespace-nowrap">Lake Cabin Scorer</h1>
                   <div className="inline-flex items-center bg-white rounded-full shadow-md border border-slate-200 p-1">
                     <button
                       onClick={() => switchTab('cabins')}
@@ -1008,76 +1008,53 @@
                     </>
                   ) : (
                     <div>
-                      <div className="bg-white/80 rounded-2xl shadow-lg p-6 border border-teal-100 mb-6">
-                        <h3 className="text-xl font-bold text-slate-800 mb-4 text-center">Backup Lake Data</h3>
-                        <div className="flex gap-4">
-                          <button onClick={exportLakes} className="flex-1 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-bold flex items-center justify-center gap-2">
-                            <i data-lucide="download" className="w-5 h-5"></i>
-                            Export Lakes
-                          </button>
-                          <label className="flex-1 py-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-bold flex items-center justify-center gap-2 cursor-pointer">
-                            <i data-lucide="upload" className="w-5 h-5"></i>
-                            Import Lakes
-                            <input type="file" accept=".json" onChange={importLakes} className="hidden" />
-                          </label>
-                        </div>
-                      </div>
-
                       {savedLakes.length === 0 ? (
-                        <div className="text-center py-16 bg-white/60 rounded-2xl border-2 border-dashed border-slate-300">
-                          <div className="text-6xl mb-4">💾</div>
+                        <div className="text-center py-16 bg-white/60 rounded-2xl border-2 border-dashed border-teal-300">
+                          <div className="text-6xl mb-4">🌊</div>
                           <p className="text-xl text-slate-600">No saved lakes yet. Use the calculator to score and save lakes!</p>
                         </div>
                       ) : (
-                        <>
-                          <div className="flex items-center justify-between mb-4 bg-white rounded-lg p-3 border border-slate-200">
-                            <span className="text-sm font-semibold text-slate-700">Sort by:</span>
+                        <div className="mb-4 bg-gradient-to-br from-teal-600 to-blue-600 rounded-2xl shadow-2xl p-6 text-white">
+                          <div className="flex items-center justify-between mb-4 bg-white/20 rounded-lg p-3">
+                            <span className="text-sm font-semibold text-white">Sort by:</span>
                             <select
                               value={lakeSortBy}
                               onChange={(e) => setLakeSortBy(e.target.value)}
-                              className="text-sm font-semibold text-blue-600 border-none outline-none bg-transparent cursor-pointer"
+                              className="text-sm font-semibold text-white border-none outline-none bg-transparent cursor-pointer"
                             >
-                              <option value="score">Overall Score</option>
-                              <option value="acres">Acres</option>
-                              <option value="health">Health</option>
-                              <option value="tsi">TSI</option>
-                              <option value="tp">TP</option>
-                              <option value="shoreline">Shoreline</option>
+                              <option value="score" className="text-slate-800">Overall Score</option>
+                              <option value="acres" className="text-slate-800">Acres</option>
+                              <option value="health" className="text-slate-800">Health</option>
+                              <option value="tsi" className="text-slate-800">TSI</option>
+                              <option value="tp" className="text-slate-800">TP</option>
+                              <option value="shoreline" className="text-slate-800">Shoreline</option>
                             </select>
                           </div>
-
-                          <div className="space-y-4">
+                          <div className="space-y-3">
                             {sortedLakes.map((lake) => {
                               const isExpanded = expandedLakes.has(lake.id);
                               return (
-                                <div key={lake.id} className="bg-gray-200 rounded-xl shadow-lg overflow-hidden">
-                                  <div className="px-4 py-3 bg-gray-200 cursor-pointer" onClick={() => toggleLakeExpanded(lake.id)}>
+                                <div key={lake.id} className="bg-white/20 rounded-xl overflow-hidden">
+                                  <div className="px-6 py-4 cursor-pointer" onClick={() => toggleLakeExpanded(lake.id)}>
                                     <div className="flex justify-between items-center">
-                                      <h3 className={'text-lg font-bold ' + getLakeNameColor(lake.watershedScore)}>
+                                      <h3 className="text-lg font-bold text-white">
                                         {lake.name}
                                       </h3>
                                       <div className="flex items-center gap-3">
-                                        <span className={'text-2xl font-black ' + (lake.averageScore > 0 ? 'text-green-500' : lake.averageScore < 0 ? 'text-red-500' : 'text-yellow-500')}>
+                                        <span className={'text-2xl font-black ' + (lake.averageScore > 0 ? 'text-green-300' : lake.averageScore < 0 ? 'text-red-300' : 'text-yellow-300')}>
                                           {lake.averageScore > 0 ? '+' : ''}{lake.averageScore}
                                         </span>
-                                        <i data-lucide="chevron-down" className={'w-6 h-6 text-slate-600 transition-transform ' + (isExpanded ? 'rotate-180' : '')}></i>
+                                        <i data-lucide="chevron-down" className={'w-6 h-6 text-white transition-transform ' + (isExpanded ? 'rotate-180' : '')}></i>
                                       </div>
                                     </div>
                                   </div>
 
                                   {isExpanded && (
-                                    <div className="px-4 pb-4 mt-2 bg-gray-200">
-                                      <div className="bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl p-6 text-white text-center mb-4">
-                                        <div className="text-sm uppercase text-white/80 mb-2">Total Score</div>
-                                        <div className={'text-5xl font-black ' + (lake.averageScore > 0 ? 'text-green-300' : lake.averageScore < 0 ? 'text-red-300' : 'text-yellow-300')}>
-                                          {lake.averageScore > 0 ? '+' : ''}{lake.averageScore}
-                                        </div>
-                                      </div>
-
-                                      <div className="pt-4 border-t border-slate-200">
+                                    <div className="px-6 pb-6 border-t border-white/20 pt-4">
+                                      <div className="pt-2">
                                         {editingLakeDataId === lake.id ? (
                                           <div>
-                                            <h4 className="font-bold text-slate-700 mb-3">Edit Lake Data</h4>
+                                            <h4 className="font-bold text-white mb-3">Edit Lake Data</h4>
                                             <div className="space-y-3 mb-4">
                                               {[
                                                 { label: 'Lake Name', key: 'name', placeholder: 'Lake name', type: 'text' },
@@ -1092,130 +1069,88 @@
                                                 { label: 'Overall Appeal', key: 'appeal', placeholder: 'A, B, C, D, F', type: 'text' },
                                               ].map(({ label, key, placeholder, type }) => (
                                                 <div key={key}>
-                                                  <label className="block text-xs font-semibold text-slate-600 mb-1">{label}</label>
+                                                  <label className="block text-xs font-semibold text-white/80 mb-1">{label}</label>
                                                   <input
                                                     type={type}
                                                     value={lakeEditDraft[key] || ''}
                                                     onChange={(e) => setLakeEditDraft({ ...lakeEditDraft, [key]: e.target.value })}
                                                     placeholder={placeholder}
-                                                    className="w-full px-3 py-2 border-2 border-blue-400 rounded-lg text-sm focus:outline-none focus:border-blue-600"
+                                                    className="w-full px-3 py-2 border-2 border-white/30 rounded-lg text-sm focus:outline-none focus:border-yellow-400 bg-white/10 text-white placeholder-white/40"
                                                   />
                                                 </div>
                                               ))}
                                             </div>
                                             <div className="flex gap-2">
-                                              <button
-                                                onClick={() => updateLakeData(lake.id, lakeEditDraft)}
-                                                className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm"
-                                              >
-                                                Save Changes
-                                              </button>
-                                              <button
-                                                onClick={() => { setEditingLakeDataId(null); setLakeEditDraft({}); }}
-                                                className="flex-1 py-2 bg-slate-400 hover:bg-slate-500 text-white rounded-lg font-bold text-sm"
-                                              >
-                                                Cancel
-                                              </button>
+                                              <button onClick={() => updateLakeData(lake.id, lakeEditDraft)} className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold text-sm">Save Changes</button>
+                                              <button onClick={() => { setEditingLakeDataId(null); setLakeEditDraft({}); }} className="flex-1 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-bold text-sm">Cancel</button>
                                             </div>
                                           </div>
                                         ) : (
                                           <div>
                                             <div className="flex items-center justify-between mb-3">
-                                              <h4 className="font-bold text-slate-700">Input Data</h4>
+                                              <h4 className="font-bold text-white">Input Data</h4>
                                               <button
                                                 onClick={(e) => { e.stopPropagation(); setEditingLakeDataId(lake.id); setLakeEditDraft({ name: lake.name || '', health: lake.health || '', tp: lake.tp || '', tsi: lake.tsi || '', shorelineMiles: lake.shorelineMiles || '', appeal: lake.appeal || '', acres: lake.acres || '', watershedAcres: lake.watershedAcres || '', littoralAcres: lake.littoralAcres || '', meanDepth: lake.meanDepth || '' }); }}
-                                                className="text-xs px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-semibold flex items-center gap-1"
+                                                className="text-xs px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold flex items-center gap-1"
                                               >
                                                 <i data-lucide="edit-2" className="w-3 h-3"></i>
                                                 Edit Data
                                               </button>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                              <div>
-                                                <span className="text-sm text-slate-600">Lake Acres:</span>
-                                                <span className="ml-2 font-semibold">{lake.acres}</span>
-                                              </div>
-                                              <div>
-                                                <span className="text-sm text-slate-600">W/S Acres:</span>
-                                                <span className="ml-2 font-semibold">{lake.watershedAcres}</span>
-                                              </div>
-                                              <div>
-                                                <span className="text-sm text-slate-600">Health:</span>
-                                                <span className="ml-2 font-semibold">{lake.health || '---'}</span>
-                                              </div>
-                                              <div>
-                                                <span className="text-sm text-slate-600">TP:</span>
-                                                <span className="ml-2 font-semibold">{lake.tp || '---'}</span>
-                                              </div>
-                                              <div>
-                                                <span className="text-sm text-slate-600">Mean Depth:</span>
-                                                <span className="ml-2 font-semibold">{lake.meanDepth ? lake.meanDepth + ' ft' : '---'}</span>
-                                              </div>
-                                              <div>
-                                                <span className="text-sm text-slate-600">Overall Appeal:</span>
-                                                <span className="ml-2 font-semibold">{lake.appeal || '---'}</span>
-                                              </div>
+                                            <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+                                              {[
+                                                ['Lake Acres', lake.acres],
+                                                ['W/S Acres', lake.watershedAcres],
+                                                ['Health', lake.health || '---'],
+                                                ['TP', lake.tp || '---'],
+                                                ['Mean Depth', lake.meanDepth ? lake.meanDepth + ' ft' : '---'],
+                                                ['Shoreline', lake.shorelineMiles ? lake.shorelineMiles + ' mi' : '---'],
+                                              ].map(([label, val]) => (
+                                                <div key={label}>
+                                                  <span className="text-white/70">{label}:</span>
+                                                  <span className="ml-1 font-semibold text-white">{val}</span>
+                                                </div>
+                                              ))}
                                               <div className="col-span-2">
-                                                <span className="text-sm text-slate-600">TSI:</span>
-                                                <span className="ml-2 font-semibold">{lake.tsi || '---'}</span>
+                                                <span className="text-white/70">TSI:</span>
+                                                <span className="ml-1 font-semibold text-white">{lake.tsi || '---'}</span>
                                                 {lake.tsi && getTsiLabel(lake.tsi) && (
-                                                  <span className="ml-2 text-xs font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-700">{getTsiLabel(lake.tsi)}</span>
+                                                  <span className="ml-2 text-xs font-bold px-2 py-0.5 rounded-full bg-white/20 text-white">{getTsiLabel(lake.tsi)}</span>
                                                 )}
                                               </div>
-                                              <div>
-                                                <span className="text-sm text-slate-600">Overall Appeal:</span>
-                                                <span className="ml-2 font-semibold">{lake.appeal || '---'}</span>
-                                              </div>
-                                              <div>
-                                                <span className="text-sm text-slate-600">Shoreline:</span>
-                                                <span className="ml-2 font-semibold">{lake.shorelineMiles ? lake.shorelineMiles + ' mi' : '---'}</span>
+                                              <div className="col-span-2">
+                                                <span className="text-white/70">Overall Appeal:</span>
+                                                <span className="ml-1 font-semibold text-white">{lake.appeal || '---'}</span>
                                               </div>
                                             </div>
                                           </div>
                                         )}
 
-                                        <h4 className="font-bold text-slate-700 mb-3 mt-4">Calculated Values</h4>
-                                        <div className="grid grid-cols-2 gap-4 mb-4">
-                                          <div>
-                                            <span className="text-sm text-slate-600">W/S Ratio:</span>
-                                            <span className="ml-2 font-semibold">{lake.watershedRatio !== null ? lake.watershedRatio.toFixed(1) + ':1' : '---'}</span>
-                                          </div>
-                                          <div>
-                                            <span className="text-sm text-slate-600">Littoral %:</span>
-                                            <span className="ml-2 font-semibold">{lake.littoralPercentage !== null ? lake.littoralPercentage.toFixed(1) + '%' : '---'}</span>
-                                          </div>
+                                        <h4 className="font-bold text-white mb-3 mt-4">Calculated Values</h4>
+                                        <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+                                          <div><span className="text-white/70">W/S Ratio:</span><span className="ml-1 font-semibold text-white">{lake.watershedRatio !== null ? lake.watershedRatio.toFixed(1) + ':1' : '---'}</span></div>
+                                          <div><span className="text-white/70">Littoral %:</span><span className="ml-1 font-semibold text-white">{lake.littoralPercentage !== null ? lake.littoralPercentage.toFixed(1) + '%' : '---'}</span></div>
                                         </div>
 
-                                        <h4 className="font-bold text-slate-700 mb-3 mt-4">Individual Scores</h4>
-                                        <div className="grid grid-cols-2 gap-3 mb-4">
-                                          <div className="bg-slate-50 rounded-lg p-3 text-center">
-                                            <div className="text-xs text-slate-600 mb-1">Watershed</div>
-                                            <div className={'text-2xl font-black ' + (lake.watershedScore > 0 ? 'text-green-500' : lake.watershedScore < 0 ? 'text-red-500' : 'text-yellow-500')}>
-                                              {lake.watershedScore > 0 ? '+' : ''}{lake.watershedScore}
+                                        <h4 className="font-bold text-white mb-3 mt-4">Individual Scores</h4>
+                                        <div className="grid grid-cols-2 gap-2 mb-4">
+                                          {[
+                                            ['Watershed', lake.watershedScore],
+                                            ['Health', lake.healthScore],
+                                            ['TP', lake.tpScore],
+                                            ['Overall Appeal', lake.appealScore],
+                                          ].map(([label, sc]) => (
+                                            <div key={label} className="bg-white/10 rounded-lg p-3 text-center">
+                                              <div className="text-xs text-white/70 mb-1">{label}</div>
+                                              <div className={'text-2xl font-black ' + (sc > 0 ? 'text-green-300' : sc < 0 ? 'text-red-300' : 'text-yellow-300')}>
+                                                {sc !== null && sc !== undefined ? (sc > 0 ? '+' : '') + sc : '---'}
+                                              </div>
                                             </div>
-                                          </div>
-                                          <div className="bg-slate-50 rounded-lg p-3 text-center">
-                                            <div className="text-xs text-slate-600 mb-1">Health</div>
-                                            <div className={'text-2xl font-black ' + ((lake.healthScore || 0) > 0 ? 'text-green-500' : (lake.healthScore || 0) < 0 ? 'text-red-500' : 'text-yellow-500')}>
-                                              {lake.healthScore !== null && lake.healthScore !== undefined ? ((lake.healthScore > 0 ? '+' : '') + lake.healthScore) : '---'}
-                                            </div>
-                                          </div>
-                                          <div className="bg-slate-50 rounded-lg p-3 text-center">
-                                            <div className="text-xs text-slate-600 mb-1">TP</div>
-                                            <div className={'text-2xl font-black ' + ((lake.tpScore || 0) > 0 ? 'text-green-500' : (lake.tpScore || 0) < 0 ? 'text-red-500' : 'text-yellow-500')}>
-                                              {lake.tpScore !== null && lake.tpScore !== undefined ? ((lake.tpScore > 0 ? '+' : '') + lake.tpScore) : '---'}
-                                            </div>
-                                          </div>
-                                          <div className="bg-slate-50 rounded-lg p-3 text-center">
-                                            <div className="text-xs text-slate-600 mb-1">Overall Appeal</div>
-                                            <div className={'text-2xl font-black ' + ((lake.appealScore || 0) > 0 ? 'text-green-500' : (lake.appealScore || 0) < 0 ? 'text-red-500' : 'text-yellow-500')}>
-                                              {lake.appealScore !== null && lake.appealScore !== undefined ? ((lake.appealScore > 0 ? '+' : '') + lake.appealScore) : '---'}
-                                            </div>
-                                          </div>
+                                          ))}
                                         </div>
 
                                         <div className="mt-4">
-                                          <h4 className="font-bold text-slate-700 mb-2">Notes</h4>
+                                          <h4 className="font-bold text-white mb-2">Notes</h4>
                                           {editingLakeNotes === lake.id ? (
                                             <input
                                               type="text"
@@ -1223,14 +1158,11 @@
                                               onBlur={(e) => updateLakeNotes(lake.id, e.target.value)}
                                               onKeyDown={(e) => { if (e.key === 'Enter') updateLakeNotes(lake.id, e.target.value); }}
                                               autoFocus
-                                              className="w-full px-3 py-2 border-2 border-blue-500 rounded-lg text-sm"
+                                              className="w-full px-3 py-2 border-2 border-white/30 rounded-lg text-sm bg-white/10 text-white placeholder-white/40 focus:outline-none focus:border-yellow-400"
                                               placeholder="Add notes about this lake..."
                                             />
                                           ) : (
-                                            <div
-                                              onClick={() => setEditingLakeNotes(lake.id)}
-                                              className="w-full px-3 py-2 bg-white rounded-lg text-sm text-slate-600 cursor-pointer hover:bg-slate-50 min-h-[40px] flex items-center"
-                                            >
+                                            <div onClick={() => setEditingLakeNotes(lake.id)} className="w-full px-3 py-2 bg-white/10 rounded-lg text-sm text-white/80 cursor-pointer hover:bg-white/20 min-h-[40px] flex items-center">
                                               {lake.notes || 'Click to add notes...'}
                                             </div>
                                           )}
@@ -1238,7 +1170,7 @@
 
                                         <button
                                           onClick={(e) => { e.stopPropagation(); deleteLake(lake.id); }}
-                                          className="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold flex items-center justify-center gap-2 mt-4"
+                                          className="w-full py-3 bg-red-500/80 hover:bg-red-600 text-white rounded-lg font-bold flex items-center justify-center gap-2 mt-4"
                                         >
                                           <i data-lucide="trash-2" className="w-4 h-4"></i>
                                           Delete Lake
@@ -1252,7 +1184,7 @@
                                             <div key={field} className="flex items-center gap-2">
                                               <button
                                                 onClick={(e) => { e.stopPropagation(); setEditingLakeUrl({ id: lake.id, field }); }}
-                                                className="text-xs px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded font-semibold flex items-center"
+                                                className="text-xs px-2 py-1 bg-white/20 hover:bg-white/30 text-white rounded font-semibold flex items-center"
                                               >
                                                 <i data-lucide="link" className="w-3 h-3"></i>
                                               </button>
@@ -1264,7 +1196,7 @@
                                                   onClick={(e) => e.stopPropagation()}
                                                   onBlur={(e) => { updateLakeLink(lake.id, field, e.target.value); setEditingLakeUrl(null); }}
                                                   onKeyDown={(e) => { if (e.key === 'Enter') { updateLakeLink(lake.id, field, e.target.value); setEditingLakeUrl(null); } if (e.key === 'Escape') setEditingLakeUrl(null); }}
-                                                  className="flex-1 px-2 py-1 border-2 border-blue-400 rounded text-sm focus:outline-none"
+                                                  className="flex-1 px-2 py-1 border-2 border-white/30 rounded text-sm focus:outline-none bg-white/10 text-white placeholder-white/40 focus:border-yellow-400"
                                                   placeholder={'Paste ' + label + ' URL...'}
                                                 />
                                               ) : lake[field] ? (
@@ -1273,12 +1205,12 @@
                                                   target="_blank"
                                                   rel="noopener noreferrer"
                                                   onClick={(e) => e.stopPropagation()}
-                                                  className="text-sm text-blue-600 hover:underline font-semibold"
+                                                  className="text-sm text-white font-semibold underline hover:text-yellow-200"
                                                 >
                                                   {label}
                                                 </a>
                                               ) : (
-                                                <span className="text-xs text-slate-400">No link set</span>
+                                                <span className="text-xs text-white/40">No link set</span>
                                               )}
                                             </div>
                                           ))}
@@ -1290,8 +1222,22 @@
                             );
                           })}
                         </div>
-                        </>
+                        </div>
                       )}
+                      <div className="bg-white/80 rounded-2xl shadow-lg p-6 border border-teal-100 mt-6">
+                        <h3 className="text-xl font-bold text-slate-800 mb-4 text-center">Backup Lake Data</h3>
+                        <div className="flex gap-4">
+                          <button onClick={exportLakes} className="flex-1 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-bold flex items-center justify-center gap-2">
+                            <i data-lucide="download" className="w-5 h-5"></i>
+                            Export Lakes
+                          </button>
+                          <label className="flex-1 py-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-bold flex items-center justify-center gap-2 cursor-pointer">
+                            <i data-lucide="upload" className="w-5 h-5"></i>
+                            Import Lakes
+                            <input type="file" accept=".json" onChange={importLakes} className="hidden" />
+                          </label>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
