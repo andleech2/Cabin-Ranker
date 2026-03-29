@@ -24,17 +24,17 @@
         function CabinScorer() {
           const fields = [
             { key: 'LS',   label: 'Lake Score',         type: 'number', weight: 2 },
-            { key: 'ROL',  label: 'Resort on Lake',     type: 'select', weight: 1,
+            { key: 'ROL',  label: 'Resort on Lake',     type: 'select', weight: 2,
               options: [{label:'Yes', value:'yes', score:-2}, {label:'No', value:'no', score:2}] },
             { key: 'F',    label: 'Frontage',           type: 'feet',   weight: 1 },
             { key: 'B',    label: 'Beach',              type: 'select', weight: 2,
               options: [{label:'Sand', value:'sand', score:2}, {label:'Grass/Rock', value:'grass', score:0}, {label:'Weeds', value:'weeds', score:-1}] },
-            { key: 'LB',   label: 'Lake Bottom',        type: 'select', weight: 1,
+            { key: 'LB',   label: 'Lake Bottom',        type: 'select', weight: 2,
               options: [{label:'Hard', value:'hard', score:2}, {label:'Soft', value:'soft', score:-2}] },
             { key: 'SD',   label: 'Swimming Depth',     type: 'select', weight: 2,
               options: [{label:'4ft+', value:'4', score:2}, {label:'3ft', value:'3', score:0}, {label:'2ft', value:'2', score:-2}] },
             { key: 'DC',   label: 'Dock Condition',     type: 'grade',  weight: 1 },
-            { key: 'DL',   label: 'Dock/Lift Included', type: 'count',  weight: 1 },
+            { key: 'DL',   label: 'Number of Docks and Lifts', type: 'count',  weight: 2 },
             { key: 'BS',   label: 'Backyard Slope',     type: 'select', weight: 1,
               options: [{label:'Flat/Gentle', value:'flat', score:2}, {label:'Moderate', value:'moderate', score:1}, {label:'Steep', value:'steep', score:0}, {label:'Stairs', value:'stairs', score:-1}] },
             { key: 'CC',   label: 'Cabin Condition',    type: 'grade',  weight: 2 },
@@ -44,16 +44,16 @@
               options: [{label:'2+', value:'2', score:2}, {label:'1', value:'1', score:0}] },
             { key: 'K',    label: 'Kitchen',            type: 'grade',  weight: 1 },
             { key: 'LA',   label: 'Living Area',        type: 'grade',  weight: 1 },
-            { key: 'Loft', label: 'Loft/Upstairs',      type: 'select', weight: 1,
+            { key: 'Loft', label: 'Loft/Upstairs',      type: 'select', weight: 2,
               options: [{label:'Yes', value:'yes', score:2}, {label:'No', value:'no', score:0}] },
-            { key: 'FP',   label: 'Fireplace',          type: 'select', weight: 1,
+            { key: 'FP',   label: 'Fireplace',          type: 'select', weight: 2,
               options: [{label:'Yes', value:'yes', score:2}, {label:'No', value:'no', score:0}] },
-            { key: 'SYr',  label: 'Seasonal/Year Round',type: 'select', weight: 1,
+            { key: 'SYr',  label: 'Seasonal/Year Round',type: 'select', weight: 2,
               options: [{label:'Year Round', value:'yr', score:2}, {label:'Seasonal', value:'seasonal', score:-2}] },
-            { key: 'WD',   label: 'Washer/Dryer',       type: 'select', weight: 1,
+            { key: 'WD',   label: 'Washer/Dryer',       type: 'select', weight: 2,
               options: [{label:'Yes', value:'yes', score:2}, {label:'No', value:'no', score:0}] },
             { key: 'G',    label: 'Garage',             type: 'count',  weight: 2 },
-            { key: 'OS',   label: 'Outdoor Storage',    type: 'count',  weight: 1 },
+            { key: 'OS',   label: 'Outdoor Storage',    type: 'count',  weight: 2 },
             { key: 'BLot', label: 'Backlot',            type: 'select', weight: 2,
               options: [{label:'Yes', value:'yes', score:2}, {label:'No', value:'no', score:0}] },
             { key: 'SOL',  label: 'Side of Lake',       type: 'select', weight: 1,
@@ -160,7 +160,7 @@
             if (window.lucide) {
               window.lucide.createIcons();
             }
-          }, [cabins, expanded, expandedLakes, lakeSortBy, watershedView, editingLakeName, editingLakeNotes]);
+          }, [cabins, expanded, expandedLakes, lakeSortBy, watershedView, editingLakeName, editingLakeNotes, activeTab]);
 
           const addCabin = () => {
             setCabins([{ 
@@ -515,7 +515,6 @@
                   <div className="mb-8 bg-gradient-to-br from-teal-600 to-blue-600 rounded-2xl shadow-2xl p-8 text-white">
                     <h2 className="text-xl mb-6 flex items-center gap-3">
                       <span className="text-4xl">🏡</span>
-                      {maxScore} pts max + Lake Score
                     </h2>
                     <div className="grid gap-4">
                       {cabins.map((cabin) => {
@@ -660,7 +659,7 @@
                                             {field.weight > 1 && <span className="ml-2 text-xs bg-yellow-400 text-slate-800 px-1.5 py-0.5 rounded font-bold">2×</span>}
                                           </span>
                                           <span className={'text-sm font-bold ' + (weighted > 0 ? 'text-green-300' : weighted < 0 ? 'text-red-300' : 'text-white/50')}>
-                                            {weighted !== 0 ? (weighted > 0 ? '+' : '') + weighted : '—'}
+                                            {weighted > 0 ? '+' : ''}{weighted}
                                           </span>
                                         </div>
                                         {(field.type === 'number' || field.type === 'feet' || field.type === 'count') && (
@@ -871,7 +870,7 @@
                       </div>
 
                       <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Watershed Acres</label>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">W/S Acres</label>
                         <input
                           type="number"
                           value={watershedAcres}
@@ -947,7 +946,7 @@
                     <div className="space-y-4">
                       <div className="bg-white/20 rounded-xl p-4">
                         <div className="flex justify-between items-center">
-                          <span className="font-semibold">Watershed Ratio</span>
+                          <span className="font-semibold">W/S Ratio</span>
                           <span className="text-xl">
                             {watershedRatio !== null ? `${watershedRatio.toFixed(1)}:1` : '---'}
                           </span>
@@ -970,7 +969,7 @@
                     
                     <div className="space-y-3">
                       <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
-                        <span className="font-semibold text-slate-700">Watershed Ratio</span>
+                        <span className="font-semibold text-slate-700">W/S Ratio</span>
                         <span className={`text-3xl font-black ${getWatershedScoreColor(watershedScore)}`}>
                           {watershedScore !== null ? (watershedScore > 0 ? '+' : '') + watershedScore : '---'}
                         </span>
@@ -1002,7 +1001,7 @@
                   <div className="bg-white/80 rounded-xl p-4">
                     <h3 className="text-sm font-bold text-slate-700 mb-3">Scoring Reference</h3>
                     <div className="space-y-2 text-xs text-slate-600">
-                      <div><strong>Watershed Ratio:</strong> &lt;5:1 (+2) | 5-10:1 (+1) | 10-15:1 (0) | 15-25:1 (-1) | 25+:1 (-2)</div>
+                      <div><strong>W/S Ratio:</strong> &lt;5:1 (+2) | 5-10:1 (+1) | 10-15:1 (0) | 15-25:1 (-1) | 25+:1 (-2)</div>
                       <div><strong>Health:</strong> B+ (+2) | B (+1) | B- (0) | C+ (-1) | C (-2)</div>
                       <div><strong>TP:</strong> 5-15 (+2) | 15-25 (0) | 25+ (-2)</div>
                       <div><strong>Overall Appeal:</strong> A (+2) | B (+1) | C (0) | D (-1) | F (-2)</div>
@@ -1087,7 +1086,7 @@
                                                 { label: 'Health (Grade)', key: 'health', placeholder: 'C, C+, B-, B, B+', type: 'text' },
                                                 { label: 'TP (Total Phosphorus)', key: 'tp', placeholder: '5-30', type: 'number' },
                                                 { label: 'Lake Acres', key: 'acres', placeholder: 'Lake acres', type: 'number' },
-                                                { label: 'Watershed Acres', key: 'watershedAcres', placeholder: 'Watershed acres', type: 'number' },
+                                                { label: 'W/S Acres', key: 'watershedAcres', placeholder: 'W/S acres', type: 'number' },
                                                 { label: 'Littoral Acres', key: 'littoralAcres', placeholder: 'Littoral acres', type: 'number' },
                                                 { label: 'Shoreline Miles', key: 'shorelineMiles', placeholder: 'Shoreline miles', type: 'number' },
                                                 { label: 'Mean Depth (ft)', key: 'meanDepth', placeholder: 'Mean depth in feet', type: 'number' },
@@ -1139,7 +1138,7 @@
                                                 <span className="ml-2 font-semibold">{lake.acres}</span>
                                               </div>
                                               <div>
-                                                <span className="text-sm text-slate-600">Watershed Acres:</span>
+                                                <span className="text-sm text-slate-600">W/S Acres:</span>
                                                 <span className="ml-2 font-semibold">{lake.watershedAcres}</span>
                                               </div>
                                               <div>
@@ -1180,7 +1179,7 @@
                                         <h4 className="font-bold text-slate-700 mb-3 mt-4">Calculated Values</h4>
                                         <div className="grid grid-cols-2 gap-4 mb-4">
                                           <div>
-                                            <span className="text-sm text-slate-600">Watershed Ratio:</span>
+                                            <span className="text-sm text-slate-600">W/S Ratio:</span>
                                             <span className="ml-2 font-semibold">{lake.watershedRatio !== null ? lake.watershedRatio.toFixed(1) + ':1' : '---'}</span>
                                           </div>
                                           <div>
