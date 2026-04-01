@@ -775,19 +775,21 @@
                 <div className="border-slate-300">
                   <h2 className="text-3xl font-black text-slate-800 text-center mb-4">Lake Inputs</h2>
                   
-                  <div className="flex gap-4 mb-6">
-                    <button 
-                      onClick={() => setWatershedView('saved')}
-                      className={'flex-1 py-3 rounded-lg font-bold transition-colors ' + (watershedView === 'saved' ? 'bg-white text-teal-700 border-2 border-teal-300 shadow' : 'bg-gradient-to-r from-teal-600 to-blue-600 text-white')}
-                    >
-                      Saved Lakes ({savedLakes.length})
-                    </button>
-                    <button 
-                      onClick={() => setWatershedView('calculator')}
-                      className={'flex-1 py-3 rounded-lg font-bold transition-colors ' + (watershedView === 'calculator' ? 'bg-white text-teal-700 border-2 border-teal-300 shadow' : 'bg-gradient-to-r from-teal-600 to-blue-600 text-white')}
-                    >
-                      Lake Inputs
-                    </button>
+                  <div className="bg-white rounded-2xl shadow p-4 mb-4 border border-slate-200">
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={() => setWatershedView('saved')}
+                        className={'flex-1 py-3 rounded-lg font-bold transition-colors ' + (watershedView === 'saved' ? 'bg-teal-600 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200')}
+                      >
+                        Saved Lakes ({savedLakes.length})
+                      </button>
+                      <button 
+                        onClick={() => setWatershedView('calculator')}
+                        className={'flex-1 py-3 rounded-lg font-bold transition-colors ' + (watershedView === 'calculator' ? 'bg-teal-600 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200')}
+                      >
+                        Lake Inputs
+                      </button>
+                    </div>
                   </div>
 
                   {watershedView === 'calculator' ? (
@@ -1062,23 +1064,21 @@
                                 <div key={lake.id} className="bg-white/20 rounded-xl overflow-hidden">
                                   <div className="px-6 py-4 cursor-pointer" onClick={() => toggleLakeExpanded(lake.id)}>
                                     <div className="flex justify-between items-center">
+                                      <h3 className="text-lg font-bold text-white">
+                                        {lake.name}
+                                      </h3>
                                       <div className="flex items-center gap-2">
                                         {lake.resort === 'yes' && (
                                           <span className="text-xs font-black px-1.5 py-0.5 rounded bg-red-500 text-white">R</span>
                                         )}
-                                        <h3 className="text-lg font-bold text-white">
-                                          {lake.name}
-                                        </h3>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <span className={'text-2xl font-black ' + (lake.averageScore > 0 ? 'text-green-300' : lake.averageScore < 0 ? 'text-red-300' : 'text-yellow-300')}>
-                                          {lake.averageScore > 0 ? '+' : ''}{lake.averageScore}
-                                        </span>
                                         {lake.ag && (
                                           <span className={'text-xs font-black px-1.5 py-0.5 rounded ' + (lake.ag === 'nag' ? 'bg-green-500 text-white' : lake.ag === 'lag' ? 'bg-green-300 text-slate-800' : lake.ag === 'mag' ? 'bg-orange-400 text-white' : 'bg-red-500 text-white')}>
                                             {lake.ag.toUpperCase()}
                                           </span>
                                         )}
+                                        <span className={'text-2xl font-black ' + (lake.averageScore > 0 ? 'text-green-300' : lake.averageScore < 0 ? 'text-red-300' : 'text-yellow-300')}>
+                                          {lake.averageScore > 0 ? '+' : ''}{lake.averageScore}
+                                        </span>
                                         <i data-lucide="chevron-down" className={'w-6 h-6 text-white transition-transform ' + (isExpanded ? 'rotate-180' : '')}></i>
                                       </div>
                                     </div>
