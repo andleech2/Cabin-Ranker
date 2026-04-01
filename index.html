@@ -775,19 +775,21 @@
                 <div className="border-slate-300">
                   <h2 className="text-3xl font-black text-slate-800 text-center mb-4">Lake Inputs</h2>
                   
-                  <div className="flex gap-4 mb-6">
-                    <button 
-                      onClick={() => setWatershedView('saved')}
-                      className={'flex-1 py-3 rounded-lg font-bold transition-colors ' + (watershedView === 'saved' ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow-lg' : 'bg-white text-slate-700 border-2 border-slate-300')}
-                    >
-                      Saved Lakes ({savedLakes.length})
-                    </button>
-                    <button 
-                      onClick={() => setWatershedView('calculator')}
-                      className={'flex-1 py-3 rounded-lg font-bold transition-colors ' + (watershedView === 'calculator' ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow-lg' : 'bg-white text-slate-700 border-2 border-slate-300')}
-                    >
-                      Lake Inputs
-                    </button>
+                  <div className="flex justify-center mb-6">
+                    <div className="inline-flex items-center bg-white rounded-full shadow-md border border-slate-200 p-1">
+                      <button 
+                        onClick={() => setWatershedView('saved')}
+                        className={'px-6 py-2 rounded-full font-bold text-sm transition-all ' + (watershedView === 'saved' ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-700')}
+                      >
+                        Saved Lakes ({savedLakes.length})
+                      </button>
+                      <button 
+                        onClick={() => setWatershedView('calculator')}
+                        className={'px-6 py-2 rounded-full font-bold text-sm transition-all ' + (watershedView === 'calculator' ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-700')}
+                      >
+                        Lake Inputs
+                      </button>
+                    </div>
                   </div>
 
                   {watershedView === 'calculator' ? (
@@ -1023,16 +1025,6 @@
                     </>
                   ) : (
                     <div>
-                      <div className="flex gap-4 mb-4">
-                        <button onClick={() => setShowArchived(false)}
-                          className={'flex-1 py-2 rounded-lg font-bold text-sm transition-all ' + (!showArchived ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow-lg' : 'bg-white text-slate-700 border-2 border-slate-300')}>
-                          Active ({savedLakes.filter(l => !l.archived).length})
-                        </button>
-                        <button onClick={() => setShowArchived(true)}
-                          className={'flex-1 py-2 rounded-lg font-bold text-sm transition-all ' + (showArchived ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow-lg' : 'bg-white text-slate-700 border-2 border-slate-300')}>
-                          Archived ({savedLakes.filter(l => l.archived).length})
-                        </button>
-                      </div>
                       {savedLakes.length === 0 ? (
                         <div className="text-center py-16 bg-white/60 rounded-2xl border-2 border-dashed border-teal-300">
                           <div className="text-6xl mb-4">🌊</div>
@@ -1290,6 +1282,18 @@
                         </div>
                         </div>
                       )}
+                      <div className="flex justify-center mt-6 mb-2">
+                        <div className="inline-flex items-center bg-white rounded-full shadow-md border border-slate-200 p-1">
+                          <button onClick={() => setShowArchived(false)}
+                            className={'px-6 py-2 rounded-full font-bold text-sm transition-all ' + (!showArchived ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-700')}>
+                            Active ({savedLakes.filter(l => !l.archived).length})
+                          </button>
+                          <button onClick={() => setShowArchived(true)}
+                            className={'px-6 py-2 rounded-full font-bold text-sm transition-all ' + (showArchived ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-700')}>
+                            Archived ({savedLakes.filter(l => l.archived).length})
+                          </button>
+                        </div>
+                      </div>
                       <div className="bg-white/80 rounded-2xl shadow-lg p-6 border border-teal-100 mt-6">
                         <h3 className="text-xl font-bold text-slate-800 mb-4 text-center">Backup Lake Data</h3>
                         <div className="flex gap-4">
