@@ -111,7 +111,10 @@
           const [lakeEditDraft, setLakeEditDraft] = useState({});
           const [tsi, setTsi] = useState('');
           const [shorelineMiles, setShorelineMiles] = useState('');
+          const [ag, setAg] = useState('');
+          const [resort, setResort] = useState('');
           const [editingLakeUrl, setEditingLakeUrl] = useState(null);
+          const [showArchived, setShowArchived] = useState(false);
           const [activeTab, setActiveTab] = useState(() => localStorage.getItem('activeTab') || 'lakes');
 
           const switchTab = (tab) => {
@@ -349,6 +352,8 @@
               appeal: appeal,
               tsi: tsi,
               shorelineMiles: shorelineMiles,
+              ag: ag,
+              resort: resort,
               dnrUrl: '',
               mapUrl: '',
               watershedRatio: watershedRatio,
@@ -358,7 +363,8 @@
               tpScore: tpScore,
               appealScore: appealScore,
               averageScore: averageScore,
-              notes: ''
+              notes: '',
+              archived: false
             };
             setSavedLakes([newLake, ...savedLakes]);
             setLakeName('');
@@ -370,6 +376,8 @@
             setAppeal('');
             setTsi('');
             setShorelineMiles('');
+            setAg('');
+            setResort('');
             alert('Lake saved!');
           };
 
@@ -405,6 +413,8 @@
               appeal: draft.appeal,
               tsi: draft.tsi,
               shorelineMiles: draft.shorelineMiles,
+              ag: draft.ag !== undefined ? draft.ag : l.ag,
+              resort: draft.resort !== undefined ? draft.resort : l.resort,
               watershedRatio: newWatershedRatio,
               littoralPercentage: newLittoralPct !== null ? newLittoralPct : l.littoralPercentage,
               watershedScore: newWatershedScore,
@@ -438,8 +448,12 @@
             setExpandedLakes(newExp);
           };
 
+          const archiveLake = (id) => {
+            setSavedLakes(savedLakes.map(l => l.id === id ? { ...l, archived: !l.archived } : l));
+          };
+
           const sortedLakes = (() => {
-            const arr = [...savedLakes];
+            const arr = [...savedLakes].filter(l => showArchived ? l.archived : !l.archived);
             if (lakeSortBy === 'acres') return arr.sort((a, b) => parseFloat(b.acres || 0) - parseFloat(a.acres || 0));
             if (lakeSortBy === 'health') return arr.sort((a, b) => (b.healthScore ?? -99) - (a.healthScore ?? -99));
             if (lakeSortBy === 'tsi') return arr.sort((a, b) => parseFloat(a.tsi || 999) - parseFloat(b.tsi || 999));
@@ -929,6 +943,34 @@
                           <div className="mt-1 text-sm font-semibold text-teal-700">{getTsiLabel(tsi)}</div>
                         )}
                       </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">AG Runoff</label>
+                        <div className="flex gap-2">
+                          {[{label:'NAG', value:'nag'},{label:'LAG', value:'lag'},{label:'MAG', value:'mag'},{label:'HAG', value:'hag'}].map(opt => (
+                            <button key={opt.value} onClick={() => setAg(ag === opt.value ? '' : opt.value)}
+                              className={'flex-1 py-2 rounded-lg font-bold text-sm border-2 transition-all ' + (ag === opt.value
+                                ? (opt.value === 'nag' ? 'bg-green-500 text-white border-green-500' : opt.value === 'lag' ? 'bg-yellow-400 text-slate-800 border-yellow-400' : opt.value === 'mag' ? 'bg-orange-400 text-white border-orange-400' : 'bg-red-500 text-white border-red-500')
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400')}>
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Resort on Lake</label>
+                        <div className="flex gap-2">
+                          {[{label:'No', value:'no'},{label:'Yes', value:'yes'}].map(opt => (
+                            <button key={opt.value} onClick={() => setResort(resort === opt.value ? '' : opt.value)}
+                              className={'flex-1 py-2 rounded-lg font-bold text-sm border-2 transition-all ' + (resort === opt.value
+                                ? (opt.value === 'no' ? 'bg-green-500 text-white border-green-500' : 'bg-red-500 text-white border-red-500')
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400')}>
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -1016,6 +1058,16 @@
                         </div>
                       ) : (
                         <div className="mb-4 bg-gradient-to-br from-teal-600 to-blue-600 rounded-2xl shadow-2xl p-6 text-white">
+                          <div className="flex gap-2 mb-4">
+                            <button onClick={() => setShowArchived(false)}
+                              className={'flex-1 py-2 rounded-lg font-bold text-sm transition-all ' + (!showArchived ? 'bg-white text-teal-700' : 'bg-white/20 text-white hover:bg-white/30')}>
+                              Active ({savedLakes.filter(l => !l.archived).length})
+                            </button>
+                            <button onClick={() => setShowArchived(true)}
+                              className={'flex-1 py-2 rounded-lg font-bold text-sm transition-all ' + (showArchived ? 'bg-white text-teal-700' : 'bg-white/20 text-white hover:bg-white/30')}>
+                              Archived ({savedLakes.filter(l => l.archived).length})
+                            </button>
+                          </div>
                           <div className="flex items-center justify-between mb-4 bg-white/20 rounded-lg p-3">
                             <span className="text-sm font-semibold text-white">Sort by:</span>
                             <select
@@ -1041,7 +1093,17 @@
                                       <h3 className="text-lg font-bold text-white">
                                         {lake.name}
                                       </h3>
-                                      <div className="flex items-center gap-3">
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1">
+                                          {lake.ag && (
+                                            <span className={'text-xs font-black px-1.5 py-0.5 rounded ' + (lake.ag === 'nag' ? 'bg-green-500 text-white' : lake.ag === 'lag' ? 'bg-yellow-400 text-slate-800' : lake.ag === 'mag' ? 'bg-orange-400 text-white' : 'bg-red-500 text-white')}>
+                                              {lake.ag.toUpperCase()}
+                                            </span>
+                                          )}
+                                          {lake.resort === 'yes' && (
+                                            <span className="text-xs font-black px-1.5 py-0.5 rounded bg-red-500 text-white">R</span>
+                                          )}
+                                        </div>
                                         <span className={'text-2xl font-black ' + (lake.averageScore > 0 ? 'text-green-300' : lake.averageScore < 0 ? 'text-red-300' : 'text-yellow-300')}>
                                           {lake.averageScore > 0 ? '+' : ''}{lake.averageScore}
                                         </span>
@@ -1080,6 +1142,32 @@
                                                   />
                                                 </div>
                                               ))}
+                                              <div>
+                                                <label className="block text-xs font-semibold text-white/80 mb-1">AG Runoff</label>
+                                                <div className="flex gap-1">
+                                                  {[{label:'NAG',value:'nag'},{label:'LAG',value:'lag'},{label:'MAG',value:'mag'},{label:'HAG',value:'hag'}].map(opt => (
+                                                    <button key={opt.value} onClick={() => setLakeEditDraft({...lakeEditDraft, ag: lakeEditDraft.ag === opt.value ? '' : opt.value})}
+                                                      className={'flex-1 py-1.5 rounded text-xs font-bold transition-all ' + (lakeEditDraft.ag === opt.value
+                                                        ? (opt.value==='nag'?'bg-green-500 text-white':opt.value==='lag'?'bg-yellow-400 text-slate-800':opt.value==='mag'?'bg-orange-400 text-white':'bg-red-500 text-white')
+                                                        : 'bg-white/20 text-white hover:bg-white/30')}>
+                                                      {opt.label}
+                                                    </button>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                              <div>
+                                                <label className="block text-xs font-semibold text-white/80 mb-1">Resort on Lake</label>
+                                                <div className="flex gap-1">
+                                                  {[{label:'No',value:'no'},{label:'Yes',value:'yes'}].map(opt => (
+                                                    <button key={opt.value} onClick={() => setLakeEditDraft({...lakeEditDraft, resort: lakeEditDraft.resort === opt.value ? '' : opt.value})}
+                                                      className={'flex-1 py-1.5 rounded text-xs font-bold transition-all ' + (lakeEditDraft.resort === opt.value
+                                                        ? (opt.value==='no'?'bg-green-500 text-white':'bg-red-500 text-white')
+                                                        : 'bg-white/20 text-white hover:bg-white/30')}>
+                                                      {opt.label}
+                                                    </button>
+                                                  ))}
+                                                </div>
+                                              </div>
                                             </div>
                                             <div className="flex gap-2">
                                               <button onClick={() => updateLakeData(lake.id, lakeEditDraft)} className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold text-sm">Save Changes</button>
@@ -1091,7 +1179,7 @@
                                             <div className="flex items-center justify-between mb-3">
                                               <h4 className="font-bold text-white">Input Data</h4>
                                               <button
-                                                onClick={(e) => { e.stopPropagation(); setEditingLakeDataId(lake.id); setLakeEditDraft({ name: lake.name || '', health: lake.health || '', tp: lake.tp || '', tsi: lake.tsi || '', shorelineMiles: lake.shorelineMiles || '', appeal: lake.appeal || '', acres: lake.acres || '', watershedAcres: lake.watershedAcres || '', littoralAcres: lake.littoralAcres || '', meanDepth: lake.meanDepth || '' }); }}
+                                                onClick={(e) => { e.stopPropagation(); setEditingLakeDataId(lake.id); setLakeEditDraft({ name: lake.name || '', health: lake.health || '', tp: lake.tp || '', tsi: lake.tsi || '', shorelineMiles: lake.shorelineMiles || '', appeal: lake.appeal || '', acres: lake.acres || '', watershedAcres: lake.watershedAcres || '', littoralAcres: lake.littoralAcres || '', meanDepth: lake.meanDepth || '', ag: lake.ag || '', resort: lake.resort || '' }); }}
                                                 className="text-xs px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold flex items-center gap-1"
                                               >
                                                 <i data-lucide="edit-2" className="w-3 h-3"></i>
@@ -1112,6 +1200,18 @@
                                                   <span className="ml-1 font-semibold text-white">{val}</span>
                                                 </div>
                                               ))}
+                                              <div className="col-span-2 flex items-center gap-2 flex-wrap">
+                                                {lake.ag && (
+                                                  <span className={'text-xs font-bold px-2 py-1 rounded-full ' + (lake.ag === 'nag' ? 'bg-green-500 text-white' : lake.ag === 'lag' ? 'bg-yellow-400 text-slate-800' : lake.ag === 'mag' ? 'bg-orange-400 text-white' : 'bg-red-500 text-white')}>
+                                                    {lake.ag.toUpperCase()}
+                                                  </span>
+                                                )}
+                                                {lake.resort && (
+                                                  <span className={'text-xs font-bold px-2 py-1 rounded-full ' + (lake.resort === 'no' ? 'bg-green-500 text-white' : 'bg-red-500 text-white')}>
+                                                    Resort: {lake.resort === 'yes' ? 'Yes' : 'No'}
+                                                  </span>
+                                                )}
+                                              </div>
                                               <div className="col-span-2">
                                                 <span className="text-white/70">TSI:</span>
                                                 <span className="ml-1 font-semibold text-white">{lake.tsi || '---'}</span>
@@ -1175,6 +1275,13 @@
                                         >
                                           <i data-lucide="trash-2" className="w-4 h-4"></i>
                                           Delete Lake
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); archiveLake(lake.id); }}
+                                          className="w-full py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-bold flex items-center justify-center gap-2 mt-2 text-sm"
+                                        >
+                                          <i data-lucide={lake.archived ? 'archive-restore' : 'archive'} className="w-4 h-4"></i>
+                                          {lake.archived ? 'Restore to Active' : 'Archive Lake'}
                                         </button>
 
                                         <div className="mt-4 space-y-2">
