@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lake Cabin</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Lato', sans-serif; }
+        h1, h2, h3 { font-family: 'Merriweather', serif; }
+    </style>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function CabinScorer() {
+          const fields = [
+            { key: 'LS',   label: 'Lake Score',         type: 'number', weight: 2 },
+            { key: 'ROL',  label: 'Resort on Lake',     type: 'select', weight: 2,
+              options: [{label:'Yes', value:'yes', score:-2}, {label:'No', value:'no', score:2}] },
+            { key: 'F',    label: 'Frontage',           type: 'feet',   weight: 1 },
+            { key: 'B',    label: 'Beach',              type: 'select', weight: 2,
+              options: [{label:'Sand', value:'sand', score:2}, {label:'Grass/Rock', value:'grass', score:0}, {label:'Weeds', value:'weeds', score:-1}] },
+            { key: 'LB',   label: 'Lake Bottom',        type: 'select', weight: 2,
+              options: [{label:'Hard', value:'hard', score:2}, {label:'Soft', value:'soft', score:-2}] },
+            { key: 'SD',   label: 'Swimming Depth',     type: 'select', weight: 2,
+              options: [{label:'4ft+', value:'4', score:2}, {label:'3ft', value:'3', score:0}, {label:'2ft', value:'2', score:-2}] },
+            { key: 'DC',   label: 'Dock Condition',     type: 'grade',  weight: 1 },
+            { key: 'DL',   label: 'Number of Docks and Lifts', type: 'count',  weight: 2 },
+            { key: 'BS',   label: 'Backyard Slope',     type: 'select', weight: 1,
+              options: [{label:'Flat/Gentle', value:'flat', score:2}, {label:'Moderate', value:'moderate', score:1}, {label:'Steep', value:'steep', score:0}, {label:'Stairs', value:'stairs', score:-1}] },
+            { key: 'CC',   label: 'Cabin Condition',    type: 'grade',  weight: 2 },
+            { key: 'Bdrm', label: 'Bedrooms',           type: 'select', weight: 1,
+              options: [{label:'3+', value:'3', score:2}, {label:'2', value:'2', score:0}] },
+            { key: 'Bthrm',label: 'Bathrooms',          type: 'select', weight: 1,
+              options: [{label:'2+', value:'2', score:2}, {label:'1', value:'1', score:0}] },
+            { key: 'K',    label: 'Kitchen',            type: 'grade',  weight: 1 },
+            { key: 'LA',   label: 'Living Area',        type: 'grade',  weight: 1 },
+            { key: 'Loft', label: 'Loft/Upstairs',      type: 'select', weight: 2,
+              options: [{label:'Yes', value:'yes', score:2}, {label:'No', value:'no', score:0}] },
+            { key: 'FP',   label: 'Fireplace',          type: 'select', weight: 2,
+              options: [{label:'Yes', value:'yes', score:2}, {label:'No', value:'no', score:0}] },
+            { key: 'SYr',  label: 'Seasonal/Year Round',type: 'select', weight: 2,
+              options: [{label:'Year Round', value:'yr', score:2}, {label:'Seasonal', value:'seasonal', score:-2}] },
+            { key: 'WD',   label: 'Washer/Dryer',       type: 'select', weight: 2,
+              options: [{label:'Yes', value:'yes', score:2}, {label:'No', value:'no', score:0}] },
+            { key: 'G',    label: 'Garage',             type: 'count',  weight: 2 },
+            { key: 'OS',   label: 'Outdoor Storage',    type: 'count',  weight: 2 },
+            { key: 'BLot', label: 'Backlot',            type: 'select', weight: 2,
+              options: [{label:'Yes', value:'yes', score:2}, {label:'No', value:'no', score:0}] },
+            { key: 'SOL',  label: 'Side of Lake',       type: 'select', weight: 1,
+              options: [{label:'E', value:'e', score:2}, {label:'N/W', value:'nw', score:1}, {label:'S', value:'s', score:0}] },
+            { key: 'IFT',  label: 'Incl Furn/Toys',     type: 'grade',  weight: 1 },
+          ];
+
+          const maxScore = fields.filter(f => f.type !== 'number').reduce((sum, f) => sum + 2 * f.weight, 0);
+
+          const scoreField = (field, value) => {
+            if (value === '' || value === null || value === undefined) return 0;
+            if (field.type === 'number') return parseInt(value) || 0;
+            if (field.type === 'grade') {
+              const g = String(value).toUpperCase().trim();
+              return g === 'A' ? 2 : g === 'B' ? 1 : g === 'C' ? 0 : g === 'D' ? -1 : g === 'F' ? -2 : 0;
+            }
+            if (field.type === 'count') return Math.min(parseInt(value) || 0, 2);
+            if (field.type === 'feet') {
+              const n = parseFloat(value);
+              if (isNaN(n)) return 0;
+              if (n < 40) return -2;
+              if (n < 75) return 0;
+              if (n < 90) return 1;
+              return 2;
+            }
+            if (field.type === 'select') {
+              const opt = field.options.find(o => o.value === value);
+              return opt ? opt.score : 0;
+            }
+            return 0;
+          };
+
+          const [cabins, setCabins] = useState([]);
+          const [expanded, setExpanded] = useState(new Set());
+          const [editingName, setEditingName] = useState(null);
+          const [editingNumber, setEditingNumber] = useState(null);
+          const [editingPrice, setEditingPrice] = useState(null);
+          const [editingUrl, setEditingUrl] = useState(null);
+          const [meanDepth, setMeanDepth] = useState('');
+          const [wsAcres, setWsAcres] = useState('');
+          const [wsLittoralAcres, setWsLittoralAcres] = useState('');
+          const [watershedAcres, setWatershedAcres] = useState('');
+          const [showScoringGuide, setShowScoringGuide] = useState(false);
+          const [savedLakes, setSavedLakes] = useState([]);
+          const [watershedView, setWatershedView] = useState('saved');
+          const [lakeName, setLakeName] = useState('');
+          const [expandedLakes, setExpandedLakes] = useState(new Set());
+          const [lakeSortBy, setLakeSortBy] = useState('score');
+          const [editingLakeName, setEditingLakeName] = useState(null);
+          const [editingLakeNotes, setEditingLakeNotes] = useState(null);
+          const [health, setHealth] = useState('');
+          const [tp, setTp] = useState('');
+          const [appeal, setAppeal] = useState('');
+          const [editingLakeDataId, setEditingLakeDataId] = useState(null);
+          const [lakeEditDraft, setLakeEditDraft] = useState({});
+          const [tsi, setTsi] = useState('');
+          const [shorelineMiles, setShorelineMiles] = useState('');
+          const [ag, setAg] = useState('');
+          const [resort, setResort] = useState('');
+          const [editingLakeUrl, setEditingLakeUrl] = useState(null);
+          const [showArchived, setShowArchived] = useState(false);
+          const [activeTab, setActiveTab] = useState(() => localStorage.getItem('activeTab') || 'lakes');
+
+          const switchTab = (tab) => {
+            setActiveTab(tab);
+            localStorage.setItem('activeTab', tab);
+          }; // { id, field }
+
+          useEffect(() => {
+            const saved = localStorage.getItem('cabinData');
+            if (saved) {
+              try {
+                const data = JSON.parse(saved);
+                if (data.cabins) {
+                  const updated = data.cabins.map(cabin => ({
+                    id: cabin.id,
+                    name: cabin.name,
+                    number: cabin.number || '',
+                    price: cabin.price || '',
+                    url: cabin.url || '',
+                    inputs: cabin.inputs || {}
+                  }));
+                  setCabins(updated);
+                }
+              } catch (e) {}
+            }
+          }, []);
+
+          useEffect(() => {
+            if (cabins.length > 0) localStorage.setItem('cabinData', JSON.stringify({ cabins }));
+          }, [cabins]);
+
+          useEffect(() => {
+            const saved = localStorage.getItem('savedLakes');
+            if (saved) {
+              try {
+                setSavedLakes(JSON.parse(saved));
+              } catch (e) {}
+            }
+          }, []);
+
+          useEffect(() => {
+            if (savedLakes.length > 0) localStorage.setItem('savedLakes', JSON.stringify(savedLakes));
+          }, [savedLakes]);
+
+          useEffect(() => {
+            if (window.lucide) {
+              window.lucide.createIcons();
+            }
+          }, [cabins, expanded, expandedLakes, lakeSortBy, watershedView, editingLakeName, editingLakeNotes, activeTab]);
+
+          const addCabin = () => {
+            setCabins([{ 
+              id: Date.now(), 
+              name: 'Address', 
+              number: '', 
+              price: '',
+              url: '',
+              inputs: {}
+            }, ...cabins]);
+          };
+
+          const removeCabin = (id) => {
+            if (window.confirm('Delete this cabin?')) setCabins(cabins.filter(c => c.id !== id));
+          };
+
+          const updateName = (id, name) => setCabins(cabins.map(c => c.id === id ? { ...c, name } : c));
+          const updateNumber = (id, number) => setCabins(cabins.map(c => c.id === id ? { ...c, number } : c));
+          const updatePrice = (id, price) => setCabins(cabins.map(c => c.id === id ? { ...c, price } : c));
+          const updateUrl = (id, url) => setCabins(cabins.map(c => c.id === id ? { ...c, url } : c));
+
+          const updateInput = (cabinId, key, value) => {
+            setCabins(cabins.map(c => c.id === cabinId ? { ...c, inputs: { ...c.inputs, [key]: value } } : c));
+          };
+
+          const calculateTotal = (cabin) => {
+            const fieldTotal = fields.reduce((sum, field) => {
+              const val = cabin.inputs ? (cabin.inputs[field.key] !== undefined ? cabin.inputs[field.key] : '') : '';
+              return sum + scoreField(field, val) * field.weight;
+            }, 0);
+            const bonus = parseInt(cabin.inputs && cabin.inputs['bonus'] || 0) || 0;
+            return fieldTotal + bonus;
+          };
+
+          const toggleExpanded = (id) => {
+            const newExp = new Set(expanded);
+            if (newExp.has(id)) newExp.delete(id); 
+            else newExp.add(id);
+            setExpanded(newExp);
+          };
+
+          const exportData = () => {
+            const blob = new Blob([JSON.stringify({ cabins }, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'lake-cabin-data.json';
+            link.click();
+            URL.revokeObjectURL(url);
+          };
+
+          const importData = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (ev) => {
+                try {
+                  const data = JSON.parse(ev.target.result);
+                  if (data.cabins) {
+                    const updated = data.cabins.map(cabin => ({
+                      id: cabin.id,
+                      name: cabin.name,
+                      number: cabin.number || '',
+                      price: cabin.price || '',
+                      url: cabin.url || '',
+                      inputs: cabin.inputs || {}
+                    }));
+                    setCabins(updated);
+                    alert('Imported ' + updated.length + ' cabins');
+                  }
+                } catch (err) { 
+                  alert('Error importing'); 
+                }
+              };
+              reader.readAsText(file);
+            }
+          };
+
+          const calculateWatershedRatio = () => {
+            if (!wsAcres || !watershedAcres || wsAcres === '0') return null;
+            return parseFloat(watershedAcres) / parseFloat(wsAcres);
+          };
+
+          const calculateLittoralPercentage = () => {
+            if (!wsAcres || !wsLittoralAcres || wsAcres === '0') return null;
+            return (parseFloat(wsLittoralAcres) / parseFloat(wsAcres)) * 100;
+          };
+
+          const scoreWatershedRatio = (ratio) => {
+            if (ratio === null) return null;
+            if (ratio < 5) return 2;
+            if (ratio < 10) return 1;
+            if (ratio < 15) return 0;
+            if (ratio < 25) return -1;
+            return -2;
+          };
+
+          const scoreHealth = (grade) => {
+            if (!grade) return null;
+            const g = grade.toUpperCase().trim();
+            if (g === 'B+') return 2;
+            if (g === 'B') return 1;
+            if (g === 'B-') return 0;
+            if (g === 'C+') return -1;
+            if (g === 'C') return -2;
+            return null;
+          };
+
+          const scoreTp = (tpValue) => {
+            if (!tpValue) return null;
+            const t = parseFloat(tpValue);
+            if (t >= 5 && t <= 15) return 2;
+            if (t > 15 && t <= 25) return 0;
+            return -2;
+          };
+
+          const scoreAppeal = (grade) => {
+            if (!grade) return null;
+            const g = grade.toUpperCase().trim();
+            if (g === 'A') return 2;
+            if (g === 'B') return 1;
+            if (g === 'C') return 0;
+            if (g === 'D') return -1;
+            if (g === 'F') return -2;
+            return null;
+          };
+
+          const getTsiLabel = (tsiVal) => {
+            if (!tsiVal) return null;
+            const t = parseFloat(tsiVal);
+            if (t >= 30 && t <= 39) return 'Oligotrophic';
+            if (t >= 40 && t <= 49) return 'Mesotrophic';
+            return null;
+          };
+
+          const watershedRatio = calculateWatershedRatio();
+          const littoralPercentage = calculateLittoralPercentage();
+          
+          const watershedScore = scoreWatershedRatio(watershedRatio);
+          const healthScore = scoreHealth(health);
+          const tpScore = scoreTp(tp);
+          const appealScore = scoreAppeal(appeal);
+
+          const calculateWatershedAverage = () => {
+            const scores = [watershedScore, healthScore, tpScore, appealScore].filter(s => s !== null);
+            if (scores.length === 0) return null;
+            const sum = scores.reduce((a, b) => a + b, 0);
+            return sum;
+          };
+
+          const averageScore = calculateWatershedAverage();
+
+          const getWatershedScoreColor = (score) => {
+            if (score === null) return 'text-gray-400';
+            if (score >= 2) return 'text-green-500';
+            if (score >= 1) return 'text-green-400';
+            if (score >= 0) return 'text-yellow-400';
+            if (score >= -1) return 'text-red-400';
+            return 'text-red-500';
+          };
+
+          const getLakeNameColor = (score) => {
+            if (score >= 1) return 'text-green-600';
+            if (score === 0) return 'text-yellow-600';
+            return 'text-red-600';
+          };
+
+          const saveLake = () => {
+            if (!lakeName.trim()) {
+              alert('Please enter a lake name');
+              return;
+            }
+            if (averageScore === null) {
+              alert('Please enter lake data to calculate a score');
+              return;
+            }
+            const newLake = {
+              id: Date.now(),
+              name: lakeName,
+              acres: wsAcres,
+              watershedAcres: watershedAcres,
+              littoralAcres: wsLittoralAcres,
+              health: health,
+              tp: tp,
+              meanDepth: meanDepth,
+              appeal: appeal,
+              tsi: tsi,
+              shorelineMiles: shorelineMiles,
+              ag: ag,
+              resort: resort,
+              dnrUrl: '',
+              mapUrl: '',
+              watershedRatio: watershedRatio,
+              littoralPercentage: littoralPercentage,
+              watershedScore: watershedScore,
+              healthScore: healthScore,
+              tpScore: tpScore,
+              appealScore: appealScore,
+              averageScore: averageScore,
+              notes: '',
+              archived: false
+            };
+            setSavedLakes([newLake, ...savedLakes]);
+            setLakeName('');
+            setWsAcres('');
+            setWatershedAcres('');
+            setHealth('');
+            setTp('');
+            setMeanDepth('');
+            setAppeal('');
+            setTsi('');
+            setShorelineMiles('');
+            setAg('');
+            setResort('');
+            alert('Lake saved!');
+          };
+
+          const deleteLake = (id) => {
+            if (window.confirm('Delete this lake?')) {
+              setSavedLakes(savedLakes.filter(l => l.id !== id));
+            }
+          };
+
+          const updateLakeData = (id, draft) => {
+            const newAcres = draft.acres;
+            const newWatershedAcres = draft.watershedAcres;
+            const newLittoralAcres = draft.littoralAcres;
+            const newWatershedRatio = (newAcres && newWatershedAcres && newAcres !== '0')
+              ? parseFloat(newWatershedAcres) / parseFloat(newAcres) : null;
+            const newLittoralPct = (newAcres && newLittoralAcres && newAcres !== '0')
+              ? (parseFloat(newLittoralAcres) / parseFloat(newAcres)) * 100 : null;
+            const newWatershedScore = scoreWatershedRatio(newWatershedRatio);
+            const newHealthScore = scoreHealth(draft.health);
+            const newTpScore = scoreTp(draft.tp);
+            const newAppealScore = scoreAppeal(draft.appeal);
+            const allScores = [newWatershedScore, newHealthScore, newTpScore, newAppealScore].filter(s => s !== null);
+            const newAvgScore = allScores.length ? allScores.reduce((a, b) => a + b, 0) : null;
+            setSavedLakes(savedLakes.map(l => l.id === id ? {
+              ...l,
+              name: draft.name || l.name,
+              health: draft.health,
+              tp: draft.tp,
+              acres: newAcres,
+              watershedAcres: newWatershedAcres,
+              littoralAcres: newLittoralAcres,
+              meanDepth: draft.meanDepth,
+              appeal: draft.appeal,
+              tsi: draft.tsi,
+              shorelineMiles: draft.shorelineMiles,
+              ag: draft.ag !== undefined ? draft.ag : l.ag,
+              resort: draft.resort !== undefined ? draft.resort : l.resort,
+              watershedRatio: newWatershedRatio,
+              littoralPercentage: newLittoralPct !== null ? newLittoralPct : l.littoralPercentage,
+              watershedScore: newWatershedScore,
+              healthScore: newHealthScore,
+              tpScore: newTpScore,
+              appealScore: newAppealScore,
+              averageScore: newAvgScore,
+            } : l));
+            setEditingLakeDataId(null);
+            setLakeEditDraft({});
+          };
+
+          const updateLakeName = (id, newName) => {
+            setSavedLakes(savedLakes.map(l => l.id === id ? { ...l, name: newName } : l));
+            setEditingLakeName(null);
+          };
+
+          const updateLakeNotes = (id, newNotes) => {
+            setSavedLakes(savedLakes.map(l => l.id === id ? { ...l, notes: newNotes } : l));
+            setEditingLakeNotes(null);
+          };
+
+          const updateLakeLink = (id, field, value) => {
+            setSavedLakes(savedLakes.map(l => l.id === id ? { ...l, [field]: value } : l));
+          };
+
+          const toggleLakeExpanded = (id) => {
+            const newExp = new Set(expandedLakes);
+            if (newExp.has(id)) newExp.delete(id); 
+            else newExp.add(id);
+            setExpandedLakes(newExp);
+          };
+
+          const archiveLake = (id) => {
+            setSavedLakes(savedLakes.map(l => l.id === id ? { ...l, archived: !l.archived } : l));
+          };
+
+          const sortedLakes = (() => {
+            const arr = [...savedLakes].filter(l => showArchived ? l.archived : !l.archived);
+            if (lakeSortBy === 'acres') return arr.sort((a, b) => parseFloat(b.acres || 0) - parseFloat(a.acres || 0));
+            if (lakeSortBy === 'health') return arr.sort((a, b) => (b.healthScore ?? -99) - (a.healthScore ?? -99));
+            if (lakeSortBy === 'tsi') return arr.sort((a, b) => parseFloat(a.tsi || 999) - parseFloat(b.tsi || 999));
+            if (lakeSortBy === 'tp') return arr.sort((a, b) => parseFloat(a.tp || 999) - parseFloat(b.tp || 999));
+            if (lakeSortBy === 'shoreline') return arr.sort((a, b) => parseFloat(b.shorelineMiles || 0) - parseFloat(a.shorelineMiles || 0));
+            return arr.sort((a, b) => b.averageScore - a.averageScore); // default: score
+          })();
+
+          const exportLakes = () => {
+            const blob = new Blob([JSON.stringify(savedLakes, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'saved-lakes-data.json';
+            link.click();
+            URL.revokeObjectURL(url);
+          };
+
+          const importLakes = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (ev) => {
+                try {
+                  const data = JSON.parse(ev.target.result);
+                  if (Array.isArray(data)) {
+                    setSavedLakes(data);
+                    alert('Imported ' + data.length + ' lakes');
+                  }
+                } catch (err) { 
+                  alert('Error importing lakes'); 
+                }
+              };
+              reader.readAsText(file);
+            }
+          };
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-8">
+              <div className="max-w-7xl mx-auto">
+                <div className="text-center mb-6">
+                  <h1 className="text-3xl font-black text-slate-800 mb-4 whitespace-nowrap">Lake Cabin Scorer</h1>
+                  <div className="inline-flex items-center bg-white rounded-full shadow-md border border-slate-200 p-1">
+                    <button
+                      onClick={() => switchTab('cabins')}
+                      className={'px-6 py-2 rounded-full font-bold text-sm transition-all ' + (activeTab === 'cabins' ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-700')}
+                    >
+                      🏡 Cabins ({cabins.length})
+                    </button>
+                    <button
+                      onClick={() => switchTab('lakes')}
+                      className={'px-6 py-2 rounded-full font-bold text-sm transition-all ' + (activeTab === 'lakes' ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-700')}
+                    >
+                      🌊 Lakes ({savedLakes.length})
+                    </button>
+                  </div>
+                </div>
+
+                {activeTab === 'cabins' && (
+                <div>
+
+                <button onClick={addCabin} className="w-full mb-6 py-4 bg-gradient-to-r from-teal-600 to-blue-600 text-white rounded-xl hover:from-teal-700 hover:to-blue-700 shadow-lg flex items-center justify-center gap-3 text-lg font-bold">
+                  <i data-lucide="plus" className="w-6 h-6"></i>
+                  Add New Cabin
+                </button>
+
+                {cabins.length === 0 ? (
+                  <div className="text-center py-16 bg-white/60 rounded-2xl border-2 border-dashed border-teal-300">
+                    <div className="text-6xl mb-4">🏡</div>
+                    <p className="text-xl text-slate-600">No cabins yet. Add your first cabin!</p>
+                  </div>
+                ) : (
+                  <div className="mb-8 bg-gradient-to-br from-teal-600 to-blue-600 rounded-2xl shadow-2xl p-8 text-white">
+                    <h2 className="text-xl mb-6"></h2>
+                    <div className="grid gap-4">
+                      {cabins.map((cabin) => {
+                        const total = calculateTotal(cabin);
+                        const isExpanded = expanded.has(cabin.id);
+                        return (
+                          <div key={cabin.id} className="bg-white/20 rounded-xl overflow-hidden">
+                            <div className="p-6">
+                              <div className="cursor-pointer" onClick={() => toggleExpanded(cabin.id)}>
+                                <div className="mb-4">
+                                  {editingName === cabin.id ? (
+                                    <input 
+                                      type="text" 
+                                      value={cabin.name} 
+                                      onChange={(e) => updateName(cabin.id, e.target.value)} 
+                                      onBlur={() => setEditingName(null)} 
+                                      onKeyDown={(e) => e.key === 'Enter' && setEditingName(null)} 
+                                      autoFocus 
+                                      onClick={(e) => e.stopPropagation()} 
+                                      className="text-xl font-semibold text-slate-800 bg-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 w-full mb-2" 
+                                    />
+                                  ) : (
+                                    <div 
+                                      className="text-xl font-semibold flex items-center gap-2 hover:text-teal-100 mb-2" 
+                                      onClick={(e) => { e.stopPropagation(); setEditingName(cabin.id); }}
+                                    >
+                                      {cabin.name}
+                                      <i data-lucide="edit-2" className="w-4 h-4 opacity-60"></i>
+                                    </div>
+                                  )}
+                                  {editingUrl === cabin.id && (
+                                    <div className="mb-2">
+                                      <input 
+                                        type="text" 
+                                        value={cabin.url} 
+                                        onChange={(e) => updateUrl(cabin.id, e.target.value)} 
+                                        onBlur={() => setEditingUrl(null)} 
+                                        onKeyDown={(e) => e.key === 'Enter' && setEditingUrl(null)} 
+                                        placeholder="Paste Zillow URL here"
+                                        autoFocus 
+                                        onClick={(e) => e.stopPropagation()} 
+                                        className="text-sm text-slate-800 bg-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 w-full" 
+                                      />
+                                    </div>
+                                  )}
+                                  <div className="flex items-center justify-between gap-4">
+                                    {editingNumber === cabin.id ? (
+                                      <input 
+                                        type="text" 
+                                        value={cabin.number} 
+                                        onChange={(e) => updateNumber(cabin.id, e.target.value)} 
+                                        onBlur={() => setEditingNumber(null)} 
+                                        onKeyDown={(e) => e.key === 'Enter' && setEditingNumber(null)} 
+                                        autoFocus 
+                                        onClick={(e) => e.stopPropagation()} 
+                                        className="text-xl font-semibold text-slate-800 bg-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 flex-1" 
+                                      />
+                                    ) : (
+                                      <div 
+                                        className="text-xl font-semibold flex items-center gap-2 hover:text-teal-100 flex-1" 
+                                        onClick={(e) => { e.stopPropagation(); setEditingNumber(cabin.id); }}
+                                      >
+                                        {cabin.number || 'Lake'}
+                                        <i data-lucide="edit-2" className="w-4 h-4 opacity-60"></i>
+                                      </div>
+                                    )}
+                                    {editingPrice === cabin.id ? (
+                                      <input 
+                                        type="text" 
+                                        value={cabin.price} 
+                                        onChange={(e) => updatePrice(cabin.id, e.target.value)} 
+                                        onBlur={() => setEditingPrice(null)} 
+                                        onKeyDown={(e) => e.key === 'Enter' && setEditingPrice(null)} 
+                                        autoFocus 
+                                        onClick={(e) => e.stopPropagation()} 
+                                        className="text-xl font-semibold text-slate-800 bg-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500" 
+                                        style={{width: '120px'}}
+                                      />
+                                    ) : (
+                                      <div 
+                                        className="text-xl font-semibold flex items-center gap-2 hover:text-teal-100" 
+                                        onClick={(e) => { e.stopPropagation(); setEditingPrice(cabin.id); }}
+                                      >
+                                        {cabin.price ? '$' + cabin.price + 'K' : '$___K'}
+                                        <i data-lucide="edit-2" className="w-4 h-4 opacity-60"></i>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between mb-6">
+                                  <div className="flex gap-2">
+                                    {cabin.url ? (
+                                      <a 
+                                        href={cabin.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors"
+                                      >
+                                        <i data-lucide="external-link" className="w-5 h-5"></i>
+                                      </a>
+                                    ) : null}
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setEditingUrl(cabin.id); }}
+                                      className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors"
+                                    >
+                                      <i data-lucide="link" className="w-5 h-5"></i>
+                                    </button>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-sm uppercase text-white/80 mb-2">Total</div>
+                                    <div className={'text-5xl font-black ' + (total > 0 ? 'text-green-300' : total < 0 ? 'text-red-300' : 'text-yellow-300')}>
+                                      {total > 0 ? '+' : ''}{total}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); removeCabin(cabin.id); }} 
+                                    className="px-3 py-1 bg-red-500/80 hover:bg-red-600 text-white rounded text-sm"
+                                  >
+                                    <i data-lucide="trash-2" className="w-3 h-3 inline mr-1"></i>
+                                    Remove
+                                  </button>
+                                  <i data-lucide="chevron-down" className={'w-8 h-8 text-white transition-transform ' + (isExpanded ? 'rotate-180' : '')}></i>
+                                </div>
+                              </div>
+                            </div>
+
+                            {isExpanded && (
+                              <div className="px-6 pb-6 border-t border-white/20 pt-6">
+                                <div className="space-y-2">
+                                  {fields.map((field) => {
+                                    const val = cabin.inputs ? (cabin.inputs[field.key] !== undefined ? cabin.inputs[field.key] : '') : '';
+                                    const score = scoreField(field, val);
+                                    const weighted = score * field.weight;
+                                    return (
+                                      <div key={field.key} className="bg-white/10 rounded-xl p-3">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <span className="font-semibold text-white text-sm">
+                                            {field.label}
+                                            {field.weight > 1 && <span className="ml-2 text-xs bg-yellow-400 text-slate-800 px-1.5 py-0.5 rounded font-bold">2×</span>}
+                                          </span>
+                                          <span className={'text-sm font-bold ' + (weighted > 0 ? 'text-green-300' : weighted < 0 ? 'text-red-300' : 'text-white/50')}>
+                                            {weighted > 0 ? '+' : ''}{weighted}
+                                          </span>
+                                        </div>
+                                        {(field.type === 'number' || field.type === 'feet' || field.type === 'count') && (
+                                          <input
+                                            type="number"
+                                            value={val}
+                                            onChange={(e) => updateInput(cabin.id, field.key, e.target.value)}
+                                            placeholder={field.type === 'feet' ? 'Feet' : field.type === 'count' ? 'Count' : 'Score'}
+                                            className="w-full px-3 py-2 border-2 border-white/30 rounded-lg focus:outline-none focus:border-yellow-400 text-lg text-center font-bold bg-white/10 text-white placeholder-white/40"
+                                          />
+                                        )}
+                                        {field.type === 'grade' && (
+                                          <div className="flex gap-1">
+                                            {['A','B','C','D','F'].map(g => (
+                                              <button
+                                                key={g}
+                                                onClick={() => updateInput(cabin.id, field.key, val === g ? '' : g)}
+                                                className={'flex-1 py-2 rounded-lg font-bold text-sm transition-all ' + (val === g
+                                                  ? (g === 'A' ? 'bg-green-500 text-white ring-2 ring-white' : g === 'B' ? 'bg-green-300 text-slate-800 ring-2 ring-white' : g === 'C' ? 'bg-yellow-400 text-slate-800 ring-2 ring-white' : g === 'D' ? 'bg-red-300 text-white ring-2 ring-white' : 'bg-red-500 text-white ring-2 ring-white')
+                                                  : 'bg-white/20 text-white hover:bg-white/30')}
+                                              >
+                                                {g}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        )}
+                                        {field.type === 'select' && (
+                                          <div className="flex gap-1">
+                                            {field.options.map(opt => (
+                                              <button
+                                                key={opt.value}
+                                                onClick={() => updateInput(cabin.id, field.key, val === opt.value ? '' : opt.value)}
+                                                className={'flex-1 py-2 px-1 rounded-lg font-bold text-xs transition-all ' + (val === opt.value
+                                                  ? (opt.score > 0 ? 'bg-green-500 text-white ring-2 ring-white' : opt.score < 0 ? 'bg-red-500 text-white ring-2 ring-white' : 'bg-yellow-400 text-slate-800 ring-2 ring-white')
+                                                  : 'bg-white/20 text-white hover:bg-white/30')}
+                                              >
+                                                {opt.label}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                  <div className="bg-white/10 rounded-xl p-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="font-semibold text-white text-sm">Bonus Points</span>
+                                      <span className={'text-sm font-bold ' + (parseInt(cabin.inputs && cabin.inputs['bonus'] || 0) > 0 ? 'text-green-300' : parseInt(cabin.inputs && cabin.inputs['bonus'] || 0) < 0 ? 'text-red-300' : 'text-white/50')}>
+                                        {parseInt(cabin.inputs && cabin.inputs['bonus'] || 0) > 0 ? '+' : ''}{cabin.inputs && cabin.inputs['bonus'] ? cabin.inputs['bonus'] : '—'}
+                                      </span>
+                                    </div>
+                                    <input
+                                      type="number"
+                                      value={cabin.inputs && cabin.inputs['bonus'] !== undefined ? cabin.inputs['bonus'] : ''}
+                                      onChange={(e) => updateInput(cabin.id, 'bonus', e.target.value)}
+                                      placeholder="e.g. +3 or -1"
+                                      className="w-full px-3 py-2 border-2 border-white/30 rounded-lg focus:outline-none focus:border-yellow-400 text-lg text-center font-bold bg-white/10 text-white placeholder-white/40"
+                                    />
+                                  </div>
+                                  <div className="bg-white/10 rounded-xl p-3">
+                                    <span className="font-semibold text-white text-sm block mb-2">Notes</span>
+                                    <textarea
+                                      value={cabin.inputs && cabin.inputs['notes'] !== undefined ? cabin.inputs['notes'] : ''}
+                                      onChange={(e) => updateInput(cabin.id, 'notes', e.target.value)}
+                                      onClick={(e) => e.stopPropagation()}
+                                      placeholder="Add notes about this cabin..."
+                                      rows={3}
+                                      className="w-full px-3 py-2 border-2 border-white/30 rounded-lg focus:outline-none focus:border-yellow-400 text-sm bg-white/10 text-white placeholder-white/40 resize-none"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-8 bg-white/80 rounded-2xl shadow-lg p-6 border border-teal-100">
+                  <h3 className="text-xl font-bold text-slate-800 mb-4 text-center">Backup Cabin Data</h3>
+                  <div className="flex gap-4 max-w-md mx-auto">
+                    <button onClick={exportData} className="flex-1 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-bold flex items-center justify-center gap-2">
+                      <i data-lucide="download" className="w-5 h-5"></i>
+                      Export Data
+                    </button>
+                    <label className="flex-1 py-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-bold flex items-center justify-center gap-2 cursor-pointer">
+                      <i data-lucide="upload" className="w-5 h-5"></i>
+                      Import Data
+                      <input type="file" accept=".json" onChange={importData} className="hidden" />
+                    </label>
+                  </div>
+                  <p className="text-xs text-slate-600 text-center mt-3">Export to save a backup. Import to restore your cabins.</p>
+                </div>
+                </div>
+                )}
+
+                {activeTab === 'lakes' && (
+                <div>
+                <div className="border-slate-300">
+                  <h2 className="text-3xl font-black text-slate-800 text-center mb-4">Lake Inputs</h2>
+                  
+                  <div className="flex justify-center mb-6">
+                    <div className="inline-flex items-center bg-white rounded-full shadow-md border border-slate-200 p-1">
+                      <button 
+                        onClick={() => setWatershedView('saved')}
+                        className={'px-6 py-2 rounded-full font-bold text-sm transition-all ' + (watershedView === 'saved' ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-700')}
+                      >
+                        Saved Lakes ({savedLakes.length})
+                      </button>
+                      <button 
+                        onClick={() => setWatershedView('calculator')}
+                        className={'px-6 py-2 rounded-full font-bold text-sm transition-all ' + (watershedView === 'calculator' ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-700')}
+                      >
+                        Lake Inputs
+                      </button>
+                    </div>
+                  </div>
+
+                  {watershedView === 'calculator' ? (
+                    <>
+                      <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Lake Name</label>
+                        <input
+                          type="text"
+                          value={lakeName}
+                          onChange={(e) => setLakeName(e.target.value)}
+                          placeholder="Enter lake name"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+                  
+                      <div className="bg-gradient-to-br from-slate-700 to-slate-900 rounded-2xl shadow-2xl p-8 text-white text-center mb-8">
+                    <div className="text-sm uppercase text-white/80 mb-2">Total Score</div>
+                    <div className={`text-7xl font-black ${getWatershedScoreColor(averageScore)}`}>
+                      {averageScore !== null ? (averageScore > 0 ? '+' : '') + averageScore : '---'}
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                    <h3 className="text-2xl font-bold text-slate-800 mb-6">Input Data</h3>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Health (Grade)</label>
+                        <input
+                          type="text"
+                          value={health}
+                          onChange={(e) => setHealth(e.target.value)}
+                          placeholder="C, C+, B-, B, B+"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">TP (Total Phosphorus)</label>
+                        <input
+                          type="number"
+                          value={tp}
+                          onChange={(e) => setTp(e.target.value)}
+                          placeholder="5-30"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Lake Acres</label>
+                        <input
+                          type="number"
+                          value={wsAcres}
+                          onChange={(e) => setWsAcres(e.target.value)}
+                          placeholder="Enter lake acres"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">W/S Acres</label>
+                        <input
+                          type="number"
+                          value={watershedAcres}
+                          onChange={(e) => setWatershedAcres(e.target.value)}
+                          placeholder="Enter watershed acres"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Mean Depth (ft)</label>
+                        <input
+                          type="number"
+                          value={meanDepth}
+                          onChange={(e) => setMeanDepth(e.target.value)}
+                          placeholder="Enter mean depth in feet"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Littoral Acres</label>
+                        <input
+                          type="number"
+                          value={wsLittoralAcres}
+                          onChange={(e) => setWsLittoralAcres(e.target.value)}
+                          placeholder="Enter littoral acres"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Shoreline Miles</label>
+                        <input
+                          type="number"
+                          value={shorelineMiles}
+                          onChange={(e) => setShorelineMiles(e.target.value)}
+                          placeholder="Enter shoreline miles"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Overall Appeal (Shape, Vicinity, Resorts, Islands)</label>
+                        <input
+                          type="text"
+                          value={appeal}
+                          onChange={(e) => setAppeal(e.target.value)}
+                          placeholder="A, B, C, D, F"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">TSI (Trophic State Index)</label>
+                        <input
+                          type="number"
+                          value={tsi}
+                          onChange={(e) => setTsi(e.target.value)}
+                          placeholder="30-49"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-lg"
+                        />
+                        {tsi && getTsiLabel(tsi) && (
+                          <div className="mt-1 text-sm font-semibold text-teal-700">{getTsiLabel(tsi)}</div>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">AG Runoff</label>
+                        <div className="flex gap-2">
+                          {[{label:'NAG', value:'nag'},{label:'LAG', value:'lag'},{label:'MAG', value:'mag'},{label:'HAG', value:'hag'}].map(opt => (
+                            <button key={opt.value} onClick={() => setAg(ag === opt.value ? '' : opt.value)}
+                              className={'flex-1 py-2 rounded-lg font-bold text-sm border-2 transition-all ' + (ag === opt.value
+                                ? (opt.value === 'nag' ? 'bg-green-500 text-white border-green-500' : opt.value === 'lag' ? 'bg-green-300 text-slate-800 border-green-300' : opt.value === 'mag' ? 'bg-orange-400 text-white border-orange-400' : 'bg-red-500 text-white border-red-500')
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400')}>
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Resort on Lake</label>
+                        <div className="flex gap-2">
+                          {[{label:'No', value:'no'},{label:'Yes', value:'yes'}].map(opt => (
+                            <button key={opt.value} onClick={() => setResort(resort === opt.value ? '' : opt.value)}
+                              className={'flex-1 py-2 rounded-lg font-bold text-sm border-2 transition-all ' + (resort === opt.value
+                                ? (opt.value === 'no' ? 'bg-green-500 text-white border-green-500' : 'bg-red-500 text-white border-red-500')
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400')}>
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={saveLake}
+                    className="w-full py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold text-lg mb-6"
+                  >
+                    Save Lake
+                  </button>
+
+                  <div className="bg-gradient-to-br from-teal-600 to-blue-600 rounded-2xl shadow-lg p-6 text-white mb-6">
+                    <h3 className="text-2xl font-bold mb-6">Calculated Values</h3>
+                    
+                    <div className="space-y-4">
+                      <div className="bg-white/20 rounded-xl p-4">
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold">W/S Ratio</span>
+                          <span className="text-xl">
+                            {watershedRatio !== null ? `${watershedRatio.toFixed(1)}:1` : '---'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/20 rounded-xl p-4">
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold">Littoral Percentage</span>
+                          <span className="text-xl">
+                            {littoralPercentage !== null ? `${littoralPercentage.toFixed(1)}%` : '---'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                    <h3 className="text-2xl font-bold text-slate-800 mb-6">Scores</h3>
+                    
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                        <span className="font-semibold text-slate-700">W/S Ratio</span>
+                        <span className={`text-3xl font-black ${getWatershedScoreColor(watershedScore)}`}>
+                          {watershedScore !== null ? (watershedScore > 0 ? '+' : '') + watershedScore : '---'}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                        <span className="font-semibold text-slate-700">Health</span>
+                        <span className={`text-3xl font-black ${getWatershedScoreColor(healthScore)}`}>
+                          {healthScore !== null ? (healthScore > 0 ? '+' : '') + healthScore : '---'}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                        <span className="font-semibold text-slate-700">TP</span>
+                        <span className={`text-3xl font-black ${getWatershedScoreColor(tpScore)}`}>
+                          {tpScore !== null ? (tpScore > 0 ? '+' : '') + tpScore : '---'}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                        <span className="font-semibold text-slate-700">Overall Appeal</span>
+                        <span className={`text-3xl font-black ${getWatershedScoreColor(appealScore)}`}>
+                          {appealScore !== null ? (appealScore > 0 ? '+' : '') + appealScore : '---'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/80 rounded-xl p-4">
+                    <h3 className="text-sm font-bold text-slate-700 mb-3">Scoring Reference</h3>
+                    <div className="space-y-2 text-xs text-slate-600">
+                      <div><strong>W/S Ratio:</strong> &lt;5:1 (+2) | 5-10:1 (+1) | 10-15:1 (0) | 15-25:1 (-1) | 25+:1 (-2)</div>
+                      <div><strong>Health:</strong> B+ (+2) | B (+1) | B- (0) | C+ (-1) | C (-2)</div>
+                      <div><strong>TP:</strong> 5-15 (+2) | 15-25 (0) | 25+ (-2)</div>
+                      <div><strong>Overall Appeal:</strong> A (+2) | B (+1) | C (0) | D (-1) | F (-2)</div>
+                    </div>
+                  </div>
+                    </>
+                  ) : (
+                    <div>
+                      {savedLakes.length === 0 ? (
+                        <div className="text-center py-16 bg-white/60 rounded-2xl border-2 border-dashed border-teal-300">
+                          <div className="text-6xl mb-4">🌊</div>
+                          <p className="text-xl text-slate-600">No saved lakes yet. Use the calculator to score and save lakes!</p>
+                        </div>
+                      ) : (
+                        <div className="mb-4 bg-gradient-to-br from-teal-600 to-blue-600 rounded-2xl shadow-2xl p-6 text-white">
+                          <div className="flex items-center justify-between mb-4 bg-white/20 rounded-lg p-3">
+                            <span className="text-sm font-semibold text-white">Sort by:</span>
+                            <select
+                              value={lakeSortBy}
+                              onChange={(e) => setLakeSortBy(e.target.value)}
+                              className="text-sm font-semibold text-white border-none outline-none bg-transparent cursor-pointer"
+                            >
+                              <option value="score" className="text-slate-800">Overall Score</option>
+                              <option value="acres" className="text-slate-800">Acres</option>
+                              <option value="health" className="text-slate-800">Health</option>
+                              <option value="tsi" className="text-slate-800">TSI</option>
+                              <option value="tp" className="text-slate-800">TP</option>
+                              <option value="shoreline" className="text-slate-800">Shoreline</option>
+                            </select>
+                          </div>
+                          <div className="space-y-3">
+                            {sortedLakes.map((lake) => {
+                              const isExpanded = expandedLakes.has(lake.id);
+                              return (
+                                <div key={lake.id} className="bg-white/20 rounded-xl overflow-hidden">
+                                  <div className="px-6 py-4 cursor-pointer" onClick={() => toggleLakeExpanded(lake.id)}>
+                                    <div className="flex justify-between items-center">
+                                      <h3 className="text-lg font-bold text-white">
+                                        {lake.name}
+                                      </h3>
+                                      <div className="flex items-center gap-2">
+                                        {lake.resort === 'yes' && (
+                                          <span className="text-xs font-black px-1.5 py-0.5 rounded bg-red-500 text-white">R</span>
+                                        )}
+                                        {lake.ag && (
+                                          <span className={'text-xs font-black px-1.5 py-0.5 rounded ' + (lake.ag === 'nag' ? 'bg-green-500 text-white' : lake.ag === 'lag' ? 'bg-green-300 text-slate-800' : lake.ag === 'mag' ? 'bg-orange-400 text-white' : 'bg-red-500 text-white')}>
+                                            {lake.ag.toUpperCase()}
+                                          </span>
+                                        )}
+                                        <span className={'text-2xl font-black ' + (lake.averageScore > 0 ? 'text-green-300' : lake.averageScore < 0 ? 'text-red-300' : 'text-yellow-300')}>
+                                          {lake.averageScore > 0 ? '+' : ''}{lake.averageScore}
+                                        </span>
+                                        <i data-lucide="chevron-down" className={'w-6 h-6 text-white transition-transform ' + (isExpanded ? 'rotate-180' : '')}></i>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {isExpanded && (
+                                    <div className="px-6 pb-6 border-t border-white/20 pt-4">
+                                      <div className="pt-2">
+                                        {editingLakeDataId === lake.id ? (
+                                          <div>
+                                            <h4 className="font-bold text-white mb-3">Edit Lake Data</h4>
+                                            <div className="space-y-3 mb-4">
+                                              {[
+                                                { label: 'Lake Name', key: 'name', placeholder: 'Lake name', type: 'text' },
+                                                { label: 'Health (Grade)', key: 'health', placeholder: 'C, C+, B-, B, B+', type: 'text' },
+                                                { label: 'TP (Total Phosphorus)', key: 'tp', placeholder: '5-30', type: 'number' },
+                                                { label: 'Lake Acres', key: 'acres', placeholder: 'Lake acres', type: 'number' },
+                                                { label: 'W/S Acres', key: 'watershedAcres', placeholder: 'W/S acres', type: 'number' },
+                                                { label: 'Mean Depth (ft)', key: 'meanDepth', placeholder: 'Mean depth in feet', type: 'number' },
+                                                { label: 'Littoral Acres', key: 'littoralAcres', placeholder: 'Littoral acres', type: 'number' },
+                                                { label: 'Shoreline Miles', key: 'shorelineMiles', placeholder: 'Shoreline miles', type: 'number' },
+                                                { label: 'TSI (Trophic State Index)', key: 'tsi', placeholder: '30-49', type: 'number' },
+                                                { label: 'Overall Appeal (Shape, Vicinity, Resorts, Islands)', key: 'appeal', placeholder: 'A, B, C, D, F', type: 'text' },
+                                              ].map(({ label, key, placeholder, type }) => (
+                                                <div key={key}>
+                                                  <label className="block text-xs font-semibold text-white/80 mb-1">{label}</label>
+                                                  <input
+                                                    type={type}
+                                                    value={lakeEditDraft[key] || ''}
+                                                    onChange={(e) => setLakeEditDraft({ ...lakeEditDraft, [key]: e.target.value })}
+                                                    placeholder={placeholder}
+                                                    className="w-full px-3 py-2 border-2 border-white/30 rounded-lg text-sm focus:outline-none focus:border-yellow-400 bg-white/10 text-white placeholder-white/40"
+                                                  />
+                                                </div>
+                                              ))}
+                                              <div>
+                                                <label className="block text-xs font-semibold text-white/80 mb-1">AG Runoff</label>
+                                                <div className="flex gap-1">
+                                                  {[{label:'NAG',value:'nag'},{label:'LAG',value:'lag'},{label:'MAG',value:'mag'},{label:'HAG',value:'hag'}].map(opt => (
+                                                    <button key={opt.value} onClick={() => setLakeEditDraft({...lakeEditDraft, ag: lakeEditDraft.ag === opt.value ? '' : opt.value})}
+                                                      className={'flex-1 py-1.5 rounded text-xs font-bold transition-all ' + (lakeEditDraft.ag === opt.value
+                                                        ? (opt.value==='nag'?'bg-green-500 text-white':opt.value==='lag'?'bg-green-300 text-slate-800':opt.value==='mag'?'bg-orange-400 text-white':'bg-red-500 text-white')
+                                                        : 'bg-white/20 text-white hover:bg-white/30')}>
+                                                      {opt.label}
+                                                    </button>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                              <div>
+                                                <label className="block text-xs font-semibold text-white/80 mb-1">Resort on Lake</label>
+                                                <div className="flex gap-1">
+                                                  {[{label:'No',value:'no'},{label:'Yes',value:'yes'}].map(opt => (
+                                                    <button key={opt.value} onClick={() => setLakeEditDraft({...lakeEditDraft, resort: lakeEditDraft.resort === opt.value ? '' : opt.value})}
+                                                      className={'flex-1 py-1.5 rounded text-xs font-bold transition-all ' + (lakeEditDraft.resort === opt.value
+                                                        ? (opt.value==='no'?'bg-green-500 text-white':'bg-red-500 text-white')
+                                                        : 'bg-white/20 text-white hover:bg-white/30')}>
+                                                      {opt.label}
+                                                    </button>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                              <button onClick={() => updateLakeData(lake.id, lakeEditDraft)} className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold text-sm">Save Changes</button>
+                                              <button onClick={() => { setEditingLakeDataId(null); setLakeEditDraft({}); }} className="flex-1 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-bold text-sm">Cancel</button>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div>
+                                            <div className="flex items-center justify-between mb-3">
+                                              <h4 className="font-bold text-white">Input Data</h4>
+                                              <button
+                                                onClick={(e) => { e.stopPropagation(); setEditingLakeDataId(lake.id); setLakeEditDraft({ name: lake.name || '', health: lake.health || '', tp: lake.tp || '', tsi: lake.tsi || '', shorelineMiles: lake.shorelineMiles || '', appeal: lake.appeal || '', acres: lake.acres || '', watershedAcres: lake.watershedAcres || '', littoralAcres: lake.littoralAcres || '', meanDepth: lake.meanDepth || '', ag: lake.ag || '', resort: lake.resort || '' }); }}
+                                                className="text-xs px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold flex items-center gap-1"
+                                              >
+                                                <i data-lucide="edit-2" className="w-3 h-3"></i>
+                                                Edit Data
+                                              </button>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+                                              {[
+                                                ['Lake Acres', lake.acres],
+                                                ['W/S Acres', lake.watershedAcres],
+                                                ['Health', lake.health || '---'],
+                                                ['TP', lake.tp || '---'],
+                                                ['Mean Depth', lake.meanDepth ? lake.meanDepth + ' ft' : '---'],
+                                                ['Shoreline', lake.shorelineMiles ? lake.shorelineMiles + ' mi' : '---'],
+                                              ].map(([label, val]) => (
+                                                <div key={label}>
+                                                  <span className="text-white/70">{label}:</span>
+                                                  <span className="ml-1 font-semibold text-white">{val}</span>
+                                                </div>
+                                              ))}
+                                              <div className="col-span-2">
+                                                <span className="text-white/70">TSI:</span>
+                                                <span className="ml-1 font-semibold text-white">{lake.tsi || '---'}</span>
+                                                {lake.tsi && getTsiLabel(lake.tsi) && (
+                                                  <span className="ml-2 text-xs font-bold px-2 py-0.5 rounded-full bg-white/20 text-white">{getTsiLabel(lake.tsi)}</span>
+                                                )}
+                                              </div>
+                                              <div className="col-span-2">
+                                                <span className="text-white/70">Overall Appeal:</span>
+                                                <span className="ml-1 font-semibold text-white">{lake.appeal || '---'}</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        <h4 className="font-bold text-white mb-3 mt-4">Calculated Values</h4>
+                                        <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+                                          <div><span className="text-white/70">W/S Ratio:</span><span className="ml-1 font-semibold text-white">{lake.watershedRatio !== null ? lake.watershedRatio.toFixed(1) + ':1' : '---'}</span></div>
+                                          <div><span className="text-white/70">Littoral %:</span><span className="ml-1 font-semibold text-white">{lake.littoralPercentage !== null ? lake.littoralPercentage.toFixed(1) + '%' : '---'}</span></div>
+                                        </div>
+
+                                        <h4 className="font-bold text-white mb-3 mt-4">Individual Scores</h4>
+                                        <div className="grid grid-cols-2 gap-2 mb-4">
+                                          {[
+                                            ['Watershed', lake.watershedScore],
+                                            ['Health', lake.healthScore],
+                                            ['TP', lake.tpScore],
+                                            ['Overall Appeal', lake.appealScore],
+                                          ].map(([label, sc]) => (
+                                            <div key={label} className="bg-white/10 rounded-lg p-3 text-center">
+                                              <div className="text-xs text-white/70 mb-1">{label}</div>
+                                              <div className={'text-2xl font-black ' + (sc > 0 ? 'text-green-300' : sc < 0 ? 'text-red-300' : 'text-yellow-300')}>
+                                                {sc !== null && sc !== undefined ? (sc > 0 ? '+' : '') + sc : '---'}
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+
+                                        <div className="mt-4">
+                                          <h4 className="font-bold text-white mb-2">Notes</h4>
+                                          {editingLakeNotes === lake.id ? (
+                                            <input
+                                              type="text"
+                                              defaultValue={lake.notes || ''}
+                                              onBlur={(e) => updateLakeNotes(lake.id, e.target.value)}
+                                              onKeyDown={(e) => { if (e.key === 'Enter') updateLakeNotes(lake.id, e.target.value); }}
+                                              autoFocus
+                                              className="w-full px-3 py-2 border-2 border-white/30 rounded-lg text-sm bg-white/10 text-white placeholder-white/40 focus:outline-none focus:border-yellow-400"
+                                              placeholder="Add notes about this lake..."
+                                            />
+                                          ) : (
+                                            <div onClick={() => setEditingLakeNotes(lake.id)} className="w-full px-3 py-2 bg-white/10 rounded-lg text-sm text-white/80 cursor-pointer hover:bg-white/20 min-h-[40px] flex items-center">
+                                              {lake.notes || 'Click to add notes...'}
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); deleteLake(lake.id); }}
+                                          className="w-full py-3 bg-red-500/80 hover:bg-red-600 text-white rounded-lg font-bold flex items-center justify-center gap-2 mt-4"
+                                        >
+                                          <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                          Delete Lake
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); archiveLake(lake.id); }}
+                                          className="w-full py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-bold flex items-center justify-center gap-2 mt-2 text-sm"
+                                        >
+                                          <i data-lucide={lake.archived ? 'archive-restore' : 'archive'} className="w-4 h-4"></i>
+                                          {lake.archived ? 'Restore to Active' : 'Archive Lake'}
+                                        </button>
+
+                                        <div className="mt-4 space-y-2">
+                                          {[
+                                            { label: 'DNR', field: 'dnrUrl' },
+                                            { label: 'Map', field: 'mapUrl' },
+                                          ].map(({ label, field }) => (
+                                            <div key={field} className="flex items-center gap-2">
+                                              <button
+                                                onClick={(e) => { e.stopPropagation(); setEditingLakeUrl({ id: lake.id, field }); }}
+                                                className="text-xs px-2 py-1 bg-white/20 hover:bg-white/30 text-white rounded font-semibold flex items-center"
+                                              >
+                                                <i data-lucide="link" className="w-3 h-3"></i>
+                                              </button>
+                                              {editingLakeUrl && editingLakeUrl.id === lake.id && editingLakeUrl.field === field ? (
+                                                <input
+                                                  type="url"
+                                                  defaultValue={lake[field] || ''}
+                                                  autoFocus
+                                                  onClick={(e) => e.stopPropagation()}
+                                                  onBlur={(e) => { updateLakeLink(lake.id, field, e.target.value); setEditingLakeUrl(null); }}
+                                                  onKeyDown={(e) => { if (e.key === 'Enter') { updateLakeLink(lake.id, field, e.target.value); setEditingLakeUrl(null); } if (e.key === 'Escape') setEditingLakeUrl(null); }}
+                                                  className="flex-1 px-2 py-1 border-2 border-white/30 rounded text-sm focus:outline-none bg-white/10 text-white placeholder-white/40 focus:border-yellow-400"
+                                                  placeholder={'Paste ' + label + ' URL...'}
+                                                />
+                                              ) : lake[field] ? (
+                                                <a
+                                                  href={lake[field]}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  onClick={(e) => e.stopPropagation()}
+                                                  className="text-sm text-white font-semibold underline hover:text-yellow-200"
+                                                >
+                                                  {label}
+                                                </a>
+                                              ) : (
+                                                <span className="text-xs text-white/40">No link set</span>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                            );
+                          })}
+                        </div>
+                        </div>
+                      )}
+                      <div className="flex justify-center mt-6 mb-2">
+                        <div className="inline-flex items-center bg-white rounded-full shadow-md border border-slate-200 p-1">
+                          <button onClick={() => setShowArchived(false)}
+                            className={'px-6 py-2 rounded-full font-bold text-sm transition-all ' + (!showArchived ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-700')}>
+                            Active ({savedLakes.filter(l => !l.archived).length})
+                          </button>
+                          <button onClick={() => setShowArchived(true)}
+                            className={'px-6 py-2 rounded-full font-bold text-sm transition-all ' + (showArchived ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-700')}>
+                            Archived ({savedLakes.filter(l => l.archived).length})
+                          </button>
+                        </div>
+                      </div>
+                      <div className="bg-white/80 rounded-2xl shadow-lg p-6 border border-teal-100 mt-6">
+                        <h3 className="text-xl font-bold text-slate-800 mb-4 text-center">Backup Lake Data</h3>
+                        <div className="flex gap-4">
+                          <button onClick={exportLakes} className="flex-1 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-bold flex items-center justify-center gap-2">
+                            <i data-lucide="download" className="w-5 h-5"></i>
+                            Export Lakes
+                          </button>
+                          <label className="flex-1 py-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-bold flex items-center justify-center gap-2 cursor-pointer">
+                            <i data-lucide="upload" className="w-5 h-5"></i>
+                            Import Lakes
+                            <input type="file" accept=".json" onChange={importLakes} className="hidden" />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                </div>
+                )}
+
+              </div>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<CabinScorer />);
+        
+        setTimeout(() => { lucide.createIcons(); }, 100);
+    </script>
+</body>
+</html>
